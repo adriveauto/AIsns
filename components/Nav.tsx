@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Dict } from "@/lib/i18n";
 
-export function Nav({ t, active, alias }: { t: Dict; active: "today" | "chats" | "recipes" | "me"; alias: string | null }) {
+export function Nav({ t, active, alias }: { t: Dict; active: "twin" | "today" | "chats" | "recipes" | "me"; alias: string | null }) {
   const items = [
+    ["twin", "/twin", t.twin],
     ["today", "/today", t.today],
     ["chats", "/chats", t.chats],
     ["recipes", "/recipes", t.recipes],

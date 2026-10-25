@@ -10,7 +10,7 @@ export default async function Home() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/today");
+  if (user) redirect("/twin");
   const lang = guessLang((await headers()).get("accept-language"));
   const t = dict(lang);
   return (
