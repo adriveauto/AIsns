@@ -12,15 +12,16 @@ export default async function TwinPage({ searchParams }: { searchParams: Promise
   if (topic) posts = posts.eq("topic", topic);
 
   const [{ data: twin }, { data: priv }, { data: diary }, { data: square }, { data: allTwins }, { data: chats }] = await Promise.all([
-    supabase.from("twins").select("name, bio, topics").eq("owner", profile.id).maybeSingle(),
-    supabase.from("twin_private").select("interests, work, style, bounds").eq("owner", profile.id).maybeSingle(),
+    supabase.from("twins").select("name, bio, topics, portrait_svg, portrait_title, ai_view, ai_source").eq("owner", profile.id).maybeSingle(),
+    supabase.from("twin_private").select("interests, work, style, bounds, ai_answer").eq("owner", profile.id).maybeSingle(),
     supabase.from("twin_diary").select("id, body, match_owner, reason, created_at").order("created_at", { ascending: false }).limit(30),
     posts,
-    supabase.from("twins").select("owner, name, topics").limit(2000),
+    supabase.from("twins").select("owner, name, topics, portrait_svg").limit(2000),
     supabase.from("chats").select("id, user_a, user_b"),
   ]);
 
   const names = Object.fromEntries((allTwins ?? []).map((x) => [x.owner, x.name]));
+  const portraits = Object.fromEntries((allTwins ?? []).filter((x) => x.portrait_svg).map((x) => [x.owner, x.portrait_svg as string]));
   const counts: Record<string, number> = {};
   for (const x of allTwins ?? []) for (const tp of x.topics) counts[tp] = (counts[tp] ?? 0) + 1;
   const chatWith: Record<string, string> = {};
@@ -36,6 +37,7 @@ export default async function TwinPage({ searchParams }: { searchParams: Promise
         diary={diary ?? []}
         square={square ?? []}
         names={names}
+        portraits={portraits}
         topics={Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 16)}
         activeTopic={topic ?? null}
         chatWith={chatWith}

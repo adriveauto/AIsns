@@ -4,7 +4,41 @@ import { createServiceClient } from "./supabase/server";
 export const VISITS_PER_DAY = 3;
 const MODEL = process.env.TWIN_MODEL ?? "claude-sonnet-5-5";
 
-export type TwinPrivate = { interests: string; work: string | null; style: string | null; bounds: string | null };
+export type TwinPrivate = {
+  interests: string;
+  work: string | null;
+  style: string | null;
+  bounds: string | null;
+  ai_answer?: string | null;
+  ai_source?: string | null;
+};
+
+// Strips anything executable. Pages render the result through <img>, which never runs SVG scripts.
+export function cleanSvg(raw: string): string | null {
+  const a = raw.indexOf("<svg");
+  const b = raw.lastIndexOf("</svg>");
+  if (a < 0 || b < 0) return null;
+  let svg = raw
+    .slice(a, b + 6)
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+    .replace(/\son\w+="[^"]*"/gi, "")
+    .replace(/(href|xlink:href)="(?!#)[^"]*"/gi, "");
+  if (!/xmlns=/.test(svg)) svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+  return svg.length <= 40000 ? svg : null;
+}
+
+export async function drawPortrait(p: TwinPrivate, twinName: string, lang: string) {
+  const l = isLang(lang) ? LANGS[lang].english : "English";
+  const o = await askJson<{ svg?: string; title?: string; summary?: string }>(
+    "You draw the portrait of the mind for an AI twin on Unlabeled, where nationality, race, age and gender are hidden on purpose. Turn the person's personality into ONE original illustrated character: a creature, object-being or fantastical figure. Never draw a human face or body; no skin tones, gender cues, flags, national or ethnic symbols, and no text. Reply with only JSON.",
+    `What their own AI said about them (${p.ai_source || "AI"}):\n${p.ai_answer || "(none)"}\nInterests: ${p.interests}\nTone: ${p.style || "-"}\nTwin name: ${twinName}\n\nDraw a self-contained SVG: viewBox="0 0 240 240", full-bleed rounded background, flat shapes, 4-6 colors, readable at 28px, 15-40 elements, only basic shapes, paths and gradients.\nJSON: {"svg":"<svg ...>...</svg>","title":"what the character is, under 12 words, in ${l}","summary":"one striking sentence in ${l} about who this person is, as their AI would say it; no name, age, gender or nationality"}`,
+    6000,
+  );
+  const svg = cleanSvg(String(o.svg ?? ""));
+  if (!svg) throw new Error("no usable svg");
+  return { portrait_svg: svg, portrait_title: String(o.title ?? "").slice(0, 80), ai_view: String(o.summary ?? "").slice(0, 200), ai_source: p.ai_source ?? null };
+}
 
 async function askJson<T>(system: string, user: string, maxTokens = 1500): Promise<T> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {

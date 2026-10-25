@@ -93,6 +93,12 @@ const en = {
   meetOwner: "Start a chat with them",
   rebuildTwin: "Rebuild my twin",
   limitReached: "Your twin has been out enough today. Tomorrow again.",
+  portraitHeading: "Portrait of your mind (optional)",
+  portraitHow: "Ask the AI you use every day (ChatGPT, Claude, Gemini…) this question and paste its answer. Your twin's look is drawn from it.",
+  portraitQuestion: "Based on our conversations so far, what kind of person do you think I am? Be honest about my personality, interests, how I work and what I often worry about. Leave out my name, age, gender, nationality, where I live and where I work.",
+  whichAi: "Which AI answered?",
+  pasteAnswer: "Paste its answer",
+  seesMe: (ai: string) => `How ${ai} sees me`,
 };
 
 export type Dict = typeof en;
@@ -190,6 +196,12 @@ const ko: Dict = {
   meetOwner: "주인끼리 대화 시작하기",
   rebuildTwin: "분신 다시 만들기",
   limitReached: "오늘은 충분히 놀았어요. 내일 다시 보내 주세요.",
+  portraitHeading: "마음의 초상 (선택)",
+  portraitHow: "평소 쓰는 AI(ChatGPT, Claude, Gemini 등)에게 아래 질문을 하고 답을 붙여 넣으세요. 분신의 모습이 그 답으로 그려져요.",
+  portraitQuestion: "지금까지 나와 나눈 대화를 바탕으로, 나는 어떤 사람인 것 같아? 성격, 관심사, 일하는 방식, 자주 고민하는 것을 솔직하게 알려 줘. 이름, 나이, 성별, 국적, 사는 곳, 회사 이름은 빼고.",
+  whichAi: "어떤 AI의 답인가요?",
+  pasteAnswer: "내 AI의 답 붙여 넣기",
+  seesMe: (ai) => `${ai}가 본 나`,
 };
 
 // UI copy ships in English and Korean for now; user content is translated into every language.

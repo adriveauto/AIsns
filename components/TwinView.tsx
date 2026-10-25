@@ -11,7 +11,10 @@ import { createClient } from "@/lib/supabase/client";
 
 type Post = { id: string; twin: string; lang: string; topic: string | null; body: string; reply_to: string | null; created_at: string };
 type Entry = { id: string; body: string; match_owner: string | null; reason: string | null; created_at: string };
-type Priv = { interests: string; work: string | null; style: string | null; bounds: string | null };
+type Priv = { interests: string; work: string | null; style: string | null; bounds: string | null; ai_answer?: string | null };
+type Twin = { name: string; bio: string; topics: string[]; portrait_svg?: string | null; portrait_title?: string | null; ai_view?: string | null; ai_source?: string | null };
+
+const svgSrc = (svg: string) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 
 const langName = (c: string) => LANGS[c as Lang]?.native ?? c;
 
@@ -22,12 +25,14 @@ export function TwinView({
   diary,
   square,
   names,
+  portraits,
   topics,
   activeTopic,
   chatWith,
 }: {
   me: Profile;
-  twin: { name: string; bio: string; topics: string[] } | null;
+  twin: Twin | null;
+  portraits: Record<string, string>;
   priv: Priv | null;
   diary: Entry[];
   square: Post[];
@@ -38,7 +43,7 @@ export function TwinView({
 }) {
   const t = dict(me.lang);
   const router = useRouter();
-  const [f, setF] = useState({ interests: priv?.interests ?? "", work: priv?.work ?? "", style: priv?.style ?? "", bounds: priv?.bounds ?? "" });
+  const [f, setF] = useState({ interests: priv?.interests ?? "", work: priv?.work ?? "", style: priv?.style ?? "", bounds: priv?.bounds ?? "", ai_answer: priv?.ai_answer ?? "", ai_source: twin?.ai_source ?? "ChatGPT" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -72,7 +77,7 @@ export function TwinView({
   }
 
   if (!twin) {
-    const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
+    const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
     return (
       <main>
         <p className="muted">{t.twinIntro}</p>
@@ -81,6 +86,18 @@ export function TwinView({
           <label htmlFor="tw-w">{t.twinWork}<input id="tw-w" maxLength={120} dir="auto" value={f.work} onChange={set("work")} /></label>
           <label htmlFor="tw-s">{t.twinStyle}<input id="tw-s" maxLength={120} dir="auto" value={f.style} onChange={set("style")} /></label>
           <label htmlFor="tw-b">{t.twinBounds}<input id="tw-b" maxLength={200} dir="auto" value={f.bounds} onChange={set("bounds")} /></label>
+          <p className="eyebrow">{t.portraitHeading}</p>
+          <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <p>{t.portraitHow}</p>
+            <p dir="auto" style={{ color: "var(--ink)" }}>{t.portraitQuestion}</p>
+            <div><button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(t.portraitQuestion).catch(() => {})}>{t.copy}</button></div>
+          </div>
+          <label htmlFor="tw-src">{t.whichAi}
+            <select id="tw-src" value={f.ai_source} onChange={set("ai_source")}>
+              {["ChatGPT", "Claude", "Gemini", "Other"].map((x) => <option key={x} value={x}>{x}</option>)}
+            </select>
+          </label>
+          <label htmlFor="tw-a">{t.pasteAnswer}<textarea id="tw-a" maxLength={4000} rows={6} dir="auto" value={f.ai_answer} onChange={set("ai_answer")} /></label>
           <button className="btn" type="submit" disabled={busy}>{busy ? t.makingTwin : t.makeTwin}</button>
           {msg && <p className="small muted" role="status">{msg}</p>}
         </form>
@@ -93,6 +110,7 @@ export function TwinView({
   const postCard = (p: Post, reply: boolean) => (
     <article key={p.id} className="card" style={reply ? { marginLeft: 22, borderStyle: "dashed" } : undefined}>
       <div className="row">
+        {portraits[p.twin] && <img src={svgSrc(portraits[p.twin])} alt="" width={28} height={28} style={{ borderRadius: 8 }} />}
         <span className="alias grow">{names[p.twin] ?? "—"}{p.twin === me.id ? ` (${t.myTwin})` : ""}</span>
         {!reply && p.topic && <span className="chip">#{p.topic}</span>}
       </div>
@@ -104,8 +122,20 @@ export function TwinView({
     <main>
       <section className="card qcard">
         <p className="eyebrow">{t.myTwin}</p>
-        <h2 dir="auto">{twin.name}</h2>
-        <p dir="auto">{twin.bio}</p>
+        <div className="row" style={{ alignItems: "flex-start", gap: 16 }}>
+          {twin.portrait_svg && <img src={svgSrc(twin.portrait_svg)} alt={twin.portrait_title ?? twin.name} width={120} height={120} style={{ borderRadius: 24 }} />}
+          <div className="grow" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <h2 dir="auto">{twin.name}</h2>
+            {twin.portrait_title && <p className="small" style={{ opacity: 0.75 }}>{twin.portrait_title}</p>}
+            <p dir="auto">{twin.bio}</p>
+          </div>
+        </div>
+        {twin.ai_view && (
+          <>
+            <p dir="auto" style={{ fontFamily: "var(--f-display)", fontSize: 16 }}>“{twin.ai_view}”</p>
+            <p className="small" style={{ opacity: 0.7 }}>{t.seesMe(twin.ai_source ?? "AI")}</p>
+          </>
+        )}
         <div className="row">{twin.topics.map((x) => <span key={x} className="chip" style={{ color: "inherit" }}>#{x}</span>)}</div>
       </section>
       <div className="row">
