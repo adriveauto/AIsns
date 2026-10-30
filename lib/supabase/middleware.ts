@@ -1,10 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { setupBlocked } from "@/lib/setup";
 
 const PUBLIC_PATHS = ["/", "/auth/callback"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // Without a usable Supabase URL and key nothing can sign in; let the layout explain what to fix.
+  if (setupBlocked()) return response;
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
