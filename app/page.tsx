@@ -18,7 +18,7 @@ export default async function Home() {
       <p className="eyebrow">Unlabeled</p>
       <h1>{t.tagline}</h1>
       <p className="muted" style={{ fontSize: 17 }}>{t.intro}</p>
-      <SignIn t={t} />
+      <SignIn lang={lang} />
     </main>
   );
 }

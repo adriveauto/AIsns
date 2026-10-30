@@ -52,9 +52,9 @@ export function RecipeList({
             <span className="stats">{stats[r.id]?.votes ?? 0} {t.votes} · {stats[r.id]?.remixes ?? 0} {t.remixes}</span>
           </div>
           <Link href={`/recipes/${r.id}`} style={{ textDecoration: "none" }}>
-            <Text text={r.title} from={r.lang} to={lang} t={t} signedIn={signedIn} />
+            <Text text={r.title} from={r.lang} to={lang} signedIn={signedIn} />
           </Link>
-          <Text text={r.goal} from={r.lang} to={lang} t={t} signedIn={signedIn} />
+          <Text text={r.goal} from={r.lang} to={lang} signedIn={signedIn} />
           <div className="row">
             {r.tools.map((x) => <span key={x} className="chip">{x}</span>)}
             {r.parents.length > 0 && <span className="chip">remix</span>}
