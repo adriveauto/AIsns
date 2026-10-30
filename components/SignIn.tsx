@@ -31,13 +31,16 @@ export function SignIn({ lang }: { lang: Lang }) {
         </label>
         <button className="btn" type="submit" disabled={busy}>{t.sendLink}</button>
       </form>
-      <button
-        type="button"
-        className="btn ghost"
-        onClick={() => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo() } })}
-      >
-        {t.google}
-      </button>
+      {/* Shown only once the Google provider is enabled in Supabase; otherwise the click ends on a 400 page. */}
+      {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1" && (
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={() => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo() } })}
+        >
+          {t.google}
+        </button>
+      )}
       {msg && <p className="small muted" role="status">{msg}</p>}
     </div>
   );
