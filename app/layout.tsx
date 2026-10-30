@@ -6,9 +6,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Unlabeled",
   description: "Talk to anyone on Earth in your own language. No labels until you both say so.",
+  appleWebApp: { capable: true, title: "Unlabeled", statusBarStyle: "black-translucent" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#151A2E" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const problems = setupBlocked() ? setupProblems() : [];
