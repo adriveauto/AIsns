@@ -41,15 +41,15 @@ export default async function RecipePage({ params }: Params) {
       <Nav t={t} active="recipes" alias={profile?.alias ?? null} />
       <main>
         <p className="eyebrow">{author?.alias ?? "—"} · {r.created_at.slice(0, 10)}</p>
-        <h2><Text text={r.title} from={r.lang} to={lang} t={t} signedIn={signedIn} /></h2>
+        <h2><Text text={r.title} from={r.lang} to={lang} signedIn={signedIn} /></h2>
         <section className="card">
           <p className="eyebrow">{t.goal}</p>
-          <Text text={r.goal} from={r.lang} to={lang} t={t} signedIn={signedIn} />
+          <Text text={r.goal} from={r.lang} to={lang} signedIn={signedIn} />
           <div className="row">{r.tools.map((x) => <span key={x} className="chip">{x}</span>)}</div>
         </section>
         <section className="card">
           <p className="eyebrow">{t.steps}</p>
-          <Text text={r.steps} from={r.lang} to={lang} t={t} signedIn={signedIn} />
+          <Text text={r.steps} from={r.lang} to={lang} signedIn={signedIn} />
         </section>
         {r.prompt && (
           <section className="card">
