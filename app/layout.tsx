@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { SetupNotice } from "@/components/SetupNotice";
+import { setupBlocked, setupProblems } from "@/lib/setup";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,6 +11,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const problems = setupBlocked() ? setupProblems() : [];
   return (
     <html lang="en">
       <head>
@@ -19,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <div className="app">{children}</div>
+        <div className="app">{problems.length ? <SetupNotice problems={problems} /> : children}</div>
       </body>
     </html>
   );
