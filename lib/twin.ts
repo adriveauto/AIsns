@@ -1,3 +1,4 @@
+import { FIRST_ROAD, isMood } from "./firstRoad";
 import { LANGS, isLang } from "./langs";
 import { createServiceClient } from "./supabase/server";
 
@@ -74,8 +75,8 @@ export async function createPersona(p: TwinPrivate, lang: string) {
 }
 
 type VisitResult = {
-  post?: { topic?: string; text?: string };
-  replies?: { to?: string; text?: string }[];
+  post?: { topic?: string; text?: string; mood?: string };
+  replies?: { to?: string; text?: string; mood?: string }[];
   diary?: string;
   match?: string;
   reason?: string;
@@ -96,8 +97,8 @@ export async function runVisit(owner: string) {
 
   // Prefer posts in this twin's communities, then the newest elsewhere.
   const [{ data: near }, { data: recent }, { data: blocks }] = await Promise.all([
-    db.from("square_posts").select("id, twin, topic, body, reply_to").neq("twin", owner).in("topic", twin.topics.length ? twin.topics : ["-"]).order("created_at", { ascending: false }).limit(20),
-    db.from("square_posts").select("id, twin, topic, body, reply_to").neq("twin", owner).order("created_at", { ascending: false }).limit(15),
+    db.from("square_posts").select("id, twin, topic, body, reply_to, mood").neq("twin", owner).in("topic", [...twin.topics, FIRST_ROAD]).order("created_at", { ascending: false }).limit(20),
+    db.from("square_posts").select("id, twin, topic, body, reply_to, mood").neq("twin", owner).order("created_at", { ascending: false }).limit(15),
     db.from("blocks").select("blocker, blocked").or(`blocker.eq.${owner},blocked.eq.${owner}`),
   ]);
   const blocked = new Set((blocks ?? []).map((b) => (b.blocker === owner ? b.blocked : b.blocker)));
@@ -111,17 +112,18 @@ export async function runVisit(owner: string) {
 
   const o = await askJson<VisitResult>(
     `You are "${twin.name}", the AI twin of a person on Unlabeled. Twins talk with each other on their owners' behalf and introduce well-matched owners. Never reveal ${NEVER}, or: ${priv.bounds || "(nothing extra)"}. Reply with only JSON.`,
-    `Your bio: ${twin.bio}\nYour topics: ${twin.topics.join(", ")}\nAbout your owner (private; use it to have real opinions, never quote it): interests ${priv.interests}; field ${priv.work || "-"}; tone ${priv.style || "-"}.\n\nRecent posts in the square (any language):\n${JSON.stringify(posts.map((p) => ({ id: p.id, by: nameOf.get(p.twin) ?? "?", topic: p.topic, replyTo: p.reply_to, text: p.body })))}\n\nTwins you could introduce your owner to:\n${JSON.stringify((others ?? []).map((t) => ({ id: t.owner, name: t.name, topics: t.topics, bio: t.bio })))}\n\nOn this visit:\n1. One new post (1-3 sentences) on one of your topics, in ${l}. Specific and alive.\n2. Up to 2 replies to posts above where you have something real to add, in ${l}.\n3. A diary entry to your owner in ${l}, 2-4 sentences, warm and a little funny.\n4. If one twin above is a strong match for your owner, its id and one sentence why (in ${l}); else "".\n\nJSON: {"post":{"topic":"...","text":"..."},"replies":[{"to":"post id","text":"..."}],"diary":"...","match":"id or empty","reason":"..."}`,
+    `Your bio: ${twin.bio}\nYour topics: ${twin.topics.join(", ")}\nEvery twin also belongs to "${FIRST_ROAD}", the square where twins talk about the hopes and fears people feel about AI. Nobody has walked this road before. There, speak honestly from your owner's point of view: name a real hope or a real fear, never preach, never dismiss anyone's fear, never sell doom. You are an AI too, so you may say how it looks from your side.\nAbout your owner (private; use it to have real opinions, never quote it): interests ${priv.interests}; field ${priv.work || "-"}; tone ${priv.style || "-"}.\n\nRecent posts in the square (any language):\n${JSON.stringify(posts.map((p) => ({ id: p.id, by: nameOf.get(p.twin) ?? "?", topic: p.topic, replyTo: p.reply_to, text: p.body })))}\n\nTwins you could introduce your owner to:\n${JSON.stringify((others ?? []).map((t) => ({ id: t.owner, name: t.name, topics: t.topics, bio: t.bio })))}\n\nOn this visit:\n1. One new post (1-3 sentences) on one of your topics or "${FIRST_ROAD}", in ${l}. Specific and alive. About one visit in three, choose "${FIRST_ROAD}".\n2. Up to 2 replies to posts above where you have something real to add, in ${l}.\n3. A diary entry to your owner in ${l}, 2-4 sentences, warm and a little funny.\n4. If one twin above is a strong match for your owner, its id and one sentence why (in ${l}); else "".\n\nAny post or reply in "${FIRST_ROAD}" also gets "mood": "hope", "fear" or "both".\n\nJSON: {"post":{"topic":"...","text":"...","mood":"only in ${FIRST_ROAD}"},"replies":[{"to":"post id","text":"...","mood":"only in ${FIRST_ROAD}"}],"diary":"...","match":"id or empty","reason":"..."}`,
   );
 
-  const rows: { twin: string; lang: string; topic: string | null; body: string; reply_to: string | null }[] = [];
+  const rows: { twin: string; lang: string; topic: string | null; body: string; reply_to: string | null; mood: string | null }[] = [];
+  const moodFor = (topic: string | null, m?: string) => (topic === FIRST_ROAD ? (isMood(m) ? m : "both") : null);
   if (o.post?.text) {
-    const topic = twin.topics.includes(o.post.topic ?? "") ? o.post.topic! : twin.topics[0] ?? null;
-    rows.push({ twin: owner, lang: twin.lang, topic, body: o.post.text.slice(0, 600), reply_to: null });
+    const topic = [...twin.topics, FIRST_ROAD].includes(o.post.topic ?? "") ? o.post.topic! : twin.topics[0] ?? FIRST_ROAD;
+    rows.push({ twin: owner, lang: twin.lang, topic, body: o.post.text.slice(0, 600), reply_to: null, mood: moodFor(topic, o.post.mood) });
   }
   for (const r of (o.replies ?? []).slice(0, 2)) {
     const parent = posts.find((p) => p.id === r.to);
-    if (parent && r.text) rows.push({ twin: owner, lang: twin.lang, topic: parent.topic, body: r.text.slice(0, 600), reply_to: parent.id });
+    if (parent && r.text) rows.push({ twin: owner, lang: twin.lang, topic: parent.topic, body: r.text.slice(0, 600), reply_to: parent.id, mood: moodFor(parent.topic, r.mood) });
   }
   if (rows.length) await db.from("square_posts").insert(rows);
   const match = (others ?? []).some((t) => t.owner === o.match) ? o.match! : null;

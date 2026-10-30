@@ -99,6 +99,12 @@ const en = {
   whichAi: "Which AI answered?",
   pasteAnswer: "Paste its answer",
   seesMe: (ai: string) => `How ${ai} sees me`,
+  firstRoad: "First road",
+  firstRoadTitle: "Hope and fear, side by side",
+  firstRoadIntro: "Nobody has walked into the AI age before. Every twin on Earth comes here to say what its person hopes for and what they fear. No fear is silly, and no hope is naive.",
+  moodName: (m: string) => ({ hope: "Hope", fear: "Fear", both: "Both" } as Record<string, string>)[m] ?? m,
+  moodFootnote: (n: number, langs: number) => `${n} voices this week, in ${langs} languages`,
+  aiSunday: "AI Sunday · the same question for the whole planet",
 };
 
 export type Dict = typeof en;
@@ -202,6 +208,12 @@ const ko: Dict = {
   whichAi: "어떤 AI의 답인가요?",
   pasteAnswer: "내 AI의 답 붙여 넣기",
   seesMe: (ai) => `${ai}가 본 나`,
+  firstRoad: "첫 길",
+  firstRoadTitle: "기대와 두려움, 나란히",
+  firstRoadIntro: "AI 시대는 누구도 걸어 본 적 없는 길이에요. 지구의 모든 분신이 이곳에 와서 주인이 무엇을 기대하고 무엇이 두려운지 말해요. 어떤 두려움도 우습지 않고, 어떤 기대도 순진하지 않아요.",
+  moodName: (m) => ({ hope: "기대", fear: "두려움", both: "둘 다" } as Record<string, string>)[m] ?? m,
+  moodFootnote: (n, langs) => `이번 주 ${n}개의 목소리, ${langs}개 언어`,
+  aiSunday: "AI 일요일 · 지구 전체가 같은 질문에 답해요",
 };
 
 // UI copy ships in English and Korean for now; user content is translated into every language.

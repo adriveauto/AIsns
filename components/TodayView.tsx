@@ -16,12 +16,14 @@ export function TodayView({
   me,
   day,
   question,
+  aiDay,
   answers,
   chatWith,
 }: {
   me: Profile;
   day: string;
   question: string;
+  aiDay?: boolean;
   answers: AnswerRow[];
   chatWith: Record<string, string>;
 }) {
@@ -74,7 +76,7 @@ export function TodayView({
   return (
     <main>
       <div className="card qcard">
-        <p className="eyebrow">{t.questionOfDay} · {day}</p>
+        <p className="eyebrow">{aiDay ? t.aiSunday : t.questionOfDay} · {day}</p>
         <h2 dir="auto">{q ?? question}</h2>
       </div>
       <form className="card" onSubmit={post}>

@@ -16,11 +16,28 @@ export const QUESTIONS = [
   "What did you want to be when you were seven?",
 ];
 
+// Every Sunday (UTC) the whole planet gets the same question about living with AI.
+export const AI_QUESTIONS = [
+  "What do you hope AI will do for you in the next five years?",
+  "What about AI quietly worries you?",
+  "What should never be handed over to AI?",
+  "When did AI last surprise you, for better or worse?",
+  "What would you want your grandchildren to know about how we lived through the start of AI?",
+  "If AI took over your least favorite task tomorrow, what would you do with the time?",
+  "What is something only a human can give another human?",
+  "Who do you worry about most in the AI age, and why?",
+];
+
+export function isAiDay(day: string): boolean {
+  return new Date(day + "T00:00:00Z").getUTCDay() === 0;
+}
+
 export function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
 export function questionFor(day: string): string {
   const n = Math.floor(Date.parse(day + "T00:00:00Z") / 864e5);
+  if (isAiDay(day)) return AI_QUESTIONS[Math.floor(n / 7) % AI_QUESTIONS.length];
   return QUESTIONS[((n % QUESTIONS.length) + QUESTIONS.length) % QUESTIONS.length];
 }

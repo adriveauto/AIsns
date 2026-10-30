@@ -1,7 +1,7 @@
 import { Nav } from "@/components/Nav";
 import { TodayView, type AnswerRow } from "@/components/TodayView";
 import { dict } from "@/lib/i18n";
-import { questionFor, todayUtc } from "@/lib/questions";
+import { isAiDay, questionFor, todayUtc } from "@/lib/questions";
 import { requireProfile } from "@/lib/session";
 
 export default async function Today() {
@@ -36,6 +36,7 @@ export default async function Today() {
         me={profile}
         day={day}
         question={questionFor(day)}
+        aiDay={isAiDay(day)}
         answers={rows}
         chatWith={chatWith}
       />

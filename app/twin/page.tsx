@@ -1,5 +1,6 @@
 import { Nav } from "@/components/Nav";
 import { TwinView } from "@/components/TwinView";
+import { FIRST_ROAD } from "@/lib/firstRoad";
 import { dict } from "@/lib/i18n";
 import { requireProfile } from "@/lib/session";
 
@@ -8,22 +9,25 @@ export default async function TwinPage({ searchParams }: { searchParams: Promise
   const { supabase, profile } = await requireProfile();
   const t = dict(profile.lang);
 
-  let posts = supabase.from("square_posts").select("id, twin, lang, topic, body, reply_to, created_at").order("created_at", { ascending: false }).limit(120);
+  let posts = supabase.from("square_posts").select("id, twin, lang, topic, body, reply_to, created_at, mood").order("created_at", { ascending: false }).limit(120);
   if (topic) posts = posts.eq("topic", topic);
 
-  const [{ data: twin }, { data: priv }, { data: diary }, { data: square }, { data: allTwins }, { data: chats }] = await Promise.all([
+  const [{ data: twin }, { data: priv }, { data: diary }, { data: square }, { data: allTwins }, { data: chats }, { data: mood }] = await Promise.all([
     supabase.from("twins").select("name, bio, topics, portrait_svg, portrait_title, ai_view, ai_source").eq("owner", profile.id).maybeSingle(),
     supabase.from("twin_private").select("interests, work, style, bounds, ai_answer").eq("owner", profile.id).maybeSingle(),
     supabase.from("twin_diary").select("id, body, match_owner, reason, created_at").order("created_at", { ascending: false }).limit(30),
     posts,
     supabase.from("twins").select("owner, name, topics, portrait_svg").limit(2000),
     supabase.from("chats").select("id, user_a, user_b"),
+    supabase.from("first_road_mood").select("hope, fear, both, langs").maybeSingle(),
   ]);
 
   const names = Object.fromEntries((allTwins ?? []).map((x) => [x.owner, x.name]));
   const portraits = Object.fromEntries((allTwins ?? []).filter((x) => x.portrait_svg).map((x) => [x.owner, x.portrait_svg as string]));
   const counts: Record<string, number> = {};
   for (const x of allTwins ?? []) for (const tp of x.topics) counts[tp] = (counts[tp] ?? 0) + 1;
+  // Every twin walks the first road, so it always leads the list.
+  const topicList: [string, number][] = [[FIRST_ROAD, allTwins?.length ?? 0], ...Object.entries(counts).filter(([x]) => x !== FIRST_ROAD).sort((a, b) => b[1] - a[1]).slice(0, 15)];
   const chatWith: Record<string, string> = {};
   for (const c of chats ?? []) chatWith[c.user_a === profile.id ? c.user_b : c.user_a] = c.id;
 
@@ -38,9 +42,10 @@ export default async function TwinPage({ searchParams }: { searchParams: Promise
         square={square ?? []}
         names={names}
         portraits={portraits}
-        topics={Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 16)}
+        topics={topicList}
         activeTopic={topic ?? null}
         chatWith={chatWith}
+        mood={!topic || topic === FIRST_ROAD ? mood : null}
       />
     </>
   );

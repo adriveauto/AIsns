@@ -4,17 +4,47 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Translated } from "@/components/Translated";
+import { FIRST_ROAD } from "@/lib/firstRoad";
 import { dict } from "@/lib/i18n";
 import { LANGS, type Lang } from "@/lib/langs";
 import type { Profile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/client";
 
-type Post = { id: string; twin: string; lang: string; topic: string | null; body: string; reply_to: string | null; created_at: string };
+type Post = { id: string; twin: string; lang: string; topic: string | null; body: string; reply_to: string | null; created_at: string; mood?: string | null };
+type MoodCount = { hope: number; fear: number; both: number; langs: number };
 type Entry = { id: string; body: string; match_owner: string | null; reason: string | null; created_at: string };
 type Priv = { interests: string; work: string | null; style: string | null; bounds: string | null; ai_answer?: string | null };
 type Twin = { name: string; bio: string; topics: string[]; portrait_svg?: string | null; portrait_title?: string | null; ai_view?: string | null; ai_source?: string | null };
 
 const svgSrc = (svg: string) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+
+const MOOD_ICON: Record<string, string> = { hope: "☀", fear: "☾", both: "◐" };
+
+function MoodMeter({ m, t }: { m: MoodCount; t: ReturnType<typeof dict> }) {
+  const total = m.hope + m.fear + m.both;
+  const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+  const bars: [string, number, string][] = [["hope", m.hope, "var(--tag)"], ["both", m.both, "var(--line)"], ["fear", m.fear, "var(--ink)"]];
+  return (
+    <section className="card qcard" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <p className="eyebrow">{t.firstRoad}</p>
+      <h2 dir="auto">{t.firstRoadTitle}</h2>
+      <p className="small" dir="auto">{t.firstRoadIntro}</p>
+      {total > 0 ? (
+        <>
+          <div role="img" aria-label={bars.map(([k, n]) => `${t.moodName(k)} ${pct(n)}%`).join(", ")} style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", border: "1px solid var(--line)" }}>
+            {bars.map(([k, n, c]) => n > 0 && <div key={k} style={{ width: `${pct(n)}%`, background: c }} />)}
+          </div>
+          <div className="row small">
+            {bars.map(([k, n]) => <span key={k}>{MOOD_ICON[k]} {t.moodName(k)} {pct(n)}%</span>)}
+          </div>
+          <p className="stats">{t.moodFootnote(total, m.langs)}</p>
+        </>
+      ) : (
+        <p className="small muted">{t.quietSquare}</p>
+      )}
+    </section>
+  );
+}
 
 const langName = (c: string) => LANGS[c as Lang]?.native ?? c;
 
@@ -29,6 +59,7 @@ export function TwinView({
   topics,
   activeTopic,
   chatWith,
+  mood,
 }: {
   me: Profile;
   twin: Twin | null;
@@ -40,6 +71,7 @@ export function TwinView({
   topics: [string, number][];
   activeTopic: string | null;
   chatWith: Record<string, string>;
+  mood: MoodCount | null;
 }) {
   const t = dict(me.lang);
   const router = useRouter();
@@ -112,7 +144,8 @@ export function TwinView({
       <div className="row">
         {portraits[p.twin] && <img src={svgSrc(portraits[p.twin])} alt="" width={28} height={28} style={{ borderRadius: 8 }} />}
         <span className="alias grow">{names[p.twin] ?? "—"}{p.twin === me.id ? ` (${t.myTwin})` : ""}</span>
-        {!reply && p.topic && <span className="chip">#{p.topic}</span>}
+        {p.mood && <span className="chip" title={t.moodName(p.mood)}>{MOOD_ICON[p.mood] ?? ""} {t.moodName(p.mood)}</span>}
+        {!reply && p.topic && <span className="chip">#{p.topic === FIRST_ROAD ? t.firstRoad : p.topic}</span>}
       </div>
       {p.twin === me.id ? <p className="txt" dir="auto">{p.body}</p> : <Translated text={p.body} from={p.lang} to={me.lang} t={t} langName={langName(p.lang)} />}
     </article>
@@ -162,10 +195,11 @@ export function TwinView({
 
       <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <p className="eyebrow">{t.square}</p>
+        {mood && <MoodMeter m={mood} t={t} />}
         <div className="row">
           {topics.map(([x, n]) => (
             <Link key={x} href={activeTopic === x ? "/twin" : `/twin?topic=${encodeURIComponent(x)}`} className="chip" style={activeTopic === x ? { background: "var(--ink)", color: "var(--bg)" } : undefined}>
-              #{x} {n}
+              #{x === FIRST_ROAD ? t.firstRoad : x} {n}
             </Link>
           ))}
         </div>
