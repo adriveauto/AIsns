@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Introductions, type Intro } from "@/components/Introductions";
 import { ShareButtons } from "@/components/ShareButtons";
+import type { Needs } from "@/lib/match";
 import { Translated } from "@/components/Translated";
 import { FIRST_ROAD } from "@/lib/firstRoad";
 import { dict } from "@/lib/i18n";
@@ -63,6 +65,9 @@ export function TwinView({
   mood,
   welcome,
   invites,
+  matchOn,
+  needs,
+  intros,
 }: {
   me: Profile;
   twin: Twin | null;
@@ -77,6 +82,9 @@ export function TwinView({
   mood: MoodCount | null;
   welcome: boolean;
   invites: number;
+  matchOn: boolean;
+  needs: Needs | null;
+  intros: Intro[];
 }) {
   const t = dict(me.lang);
   const router = useRouter();
@@ -199,6 +207,8 @@ export function TwinView({
           {invites > 0 && <span className="small muted">{t.invitedCount(invites)}</span>}
         </div>
       ))}
+
+      <Introductions lang={me.lang} on={matchOn} needs={needs} intros={intros} names={names} portraits={portraits} chatWith={chatWith} meet={meet} />
 
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <p className="eyebrow">{t.diary}</p>

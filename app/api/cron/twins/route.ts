@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { findHelpers } from "@/lib/match";
 import { runVisit } from "@/lib/twin";
 
 const BATCH = 25;
@@ -28,5 +29,13 @@ export async function GET(req: Request) {
       results.push({ error: true });
     }
   }
-  return NextResponse.json({ ran: results.length });
+  // Twins look for people worth meeting on their own; nobody has to search.
+  const day = new Date(Date.now() - 20 * 3600e3).toISOString();
+  const { data: seekers } = await db.from("twin_private").select("owner").eq("match_ok", true).or(`last_match_at.is.null,last_match_at.lt.${day}`).limit(BATCH);
+  let introduced = 0;
+  for (const s of seekers ?? []) {
+    const r = await findHelpers(s.owner).catch(() => null);
+    if (r && "found" in r) introduced += r.found ?? 0;
+  }
+  return NextResponse.json({ ran: results.length, introduced });
 }

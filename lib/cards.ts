@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { extractNeeds } from "./match";
 import { createPersona } from "./twin";
 import { createServiceClient } from "./supabase/server";
 
@@ -55,8 +56,8 @@ export async function claimTrial(token: string | undefined, owner: string, lang:
   const { data: had } = await db.from("twins").select("owner").eq("owner", owner).maybeSingle();
   if (had) return false;
   const priv = { interests: card.ai_answer.slice(0, 400), work: null, style: null, bounds: null, ai_answer: card.ai_answer };
-  const persona = await createPersona(priv, lang);
-  await db.from("twin_private").upsert({ owner, ...priv, updated_at: new Date().toISOString() });
+  const [persona, needs] = await Promise.all([createPersona(priv, lang), extractNeeds(priv, lang).catch(() => null)]);
+  await db.from("twin_private").upsert({ owner, ...priv, ...(needs ? { needs } : {}), updated_at: new Date().toISOString() });
   await db.from("twins").upsert({ owner, lang, ...persona, portrait_svg: card.svg, portrait_title: card.title, ai_view: card.view, ai_source: card.ai_source });
   await db.from("portrait_cards").delete().eq("owner", owner);
   await db.from("portrait_cards").update({ owner, ai_answer: null, claim_token: null }).eq("code", card.code);

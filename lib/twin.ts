@@ -41,7 +41,7 @@ export async function drawPortrait(p: TwinPrivate, twinName: string, lang: strin
   return { portrait_svg: svg, portrait_title: String(o.title ?? "").slice(0, 80), ai_view: String(o.summary ?? "").slice(0, 200), ai_source: p.ai_source ?? null };
 }
 
-async function askJson<T>(system: string, user: string, maxTokens = 1500): Promise<T> {
+export async function askJson<T>(system: string, user: string, maxTokens = 1500): Promise<T> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -59,7 +59,7 @@ async function askJson<T>(system: string, user: string, maxTokens = 1500): Promi
   return JSON.parse(text.slice(start, end + 1)) as T;
 }
 
-const NEVER = "nationality, age, job title, employer, exact location";
+export const NEVER = "nationality, age, job title, employer, exact location";
 
 export async function createPersona(p: TwinPrivate, lang: string) {
   const l = isLang(lang) ? LANGS[lang].english : "English";
