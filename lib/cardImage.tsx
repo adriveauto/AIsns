@@ -28,7 +28,7 @@ export async function cardImage(card: PublicCard, size: { width: number; height:
   const ko = card.lang === "ko";
   const by = card.ai_source && card.ai_source !== "Other" ? card.ai_source : "AI";
   const caption = ko ? `${by}가 본 나` : `How ${by} sees me`;
-  const cta = ko ? "당신의 AI는 당신을 어떻게 볼까요?" : "How does your AI see you?";
+  const cta = ko ? "당신의 AI는 당신을 어떻게 볼까요?" : "What does your AI think of you?";
   const text = (
     <div style={{ display: "flex", flexDirection: "column", gap: tall ? 28 : 18, maxWidth: tall ? 900 : 560 }}>
       <div style={{ fontSize: tall ? 34 : 26, color: AMBER, letterSpacing: 2 }}>{caption}</div>

@@ -19,7 +19,9 @@ export function SignIn({ lang, trial, refCode }: { lang: Lang; trial?: string; r
     e.preventDefault();
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(), data: { ...(trial ? { trial } : {}), ...(refCode ? { ref: refCode } : {}) } } });
-    setMsg(error ? t.error : t.linkSent);
+    // Supabase's built-in mailer allows only a few emails an hour; say so instead of a vague error.
+    const limited = error && (error.status === 429 || /rate limit/i.test(error.message));
+    setMsg(!error ? t.linkSent : limited ? t.emailLimited : t.error);
     setBusy(false);
   }
 

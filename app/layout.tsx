@@ -4,14 +4,15 @@ import { setupBlocked, setupProblems } from "@/lib/setup";
 import "./globals.css";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://aisns.vercel.app";
-const DESC = "매일 쓰는 AI는 나를 어떻게 보고 있을까? Ask your AI one question and get a portrait of your mind. No account needed.";
+const TITLE = "Unlabeled · What does your AI think of you?";
+const DESC = "I talk to my AI more than my family. What does it think of me? Ask it one question and get a portrait of your mind in 30 seconds. No account needed.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: "Unlabeled · 내 AI가 본 나",
+  title: TITLE,
   description: DESC,
-  openGraph: { title: "Unlabeled · 내 AI가 본 나", description: DESC, siteName: "Unlabeled", type: "website", locale: "ko_KR", alternateLocale: ["en_US"], url: SITE },
-  twitter: { card: "summary_large_image", title: "Unlabeled · How does your AI see you?", description: DESC },
+  openGraph: { title: TITLE, description: DESC, siteName: "Unlabeled", type: "website", locale: "en_US", alternateLocale: ["ko_KR"], url: SITE },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESC },
   appleWebApp: { capable: true, title: "Unlabeled", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };

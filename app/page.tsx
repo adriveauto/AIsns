@@ -7,9 +7,10 @@ import { dict } from "@/lib/i18n";
 import { guessLang } from "@/lib/langs";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {
-  const ref = (await searchParams).ref;
-  const refCode = ref && /^[a-z0-9]{8}$/.test(ref) ? ref : undefined;
+export default async function Home({ searchParams }: { searchParams: Promise<{ ref?: string; login?: string }> }) {
+  const sp = await searchParams;
+  const refCode = sp.ref && /^[a-z0-9]{8}$/.test(sp.ref) ? sp.ref : undefined;
+  const failed = sp.login === "failed";
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,10 +21,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ r
   return (
     <main style={{ paddingTop: 40 }}>
       <p className="eyebrow">Unlabeled</p>
+      {failed && <p className="notice" role="alert">{t.loginFailed}</p>}
       <h1>{t.tryHeadline}</h1>
       <p className="muted" style={{ fontSize: 17 }}>{t.tryLead}</p>
       <TryPortrait lang={lang} refCode={refCode} />
-      <details>
+      <details open={failed}>
         <summary className="small muted">{t.haveAccount}</summary>
         <div style={{ marginTop: 12 }}><SignIn lang={lang} refCode={refCode} /></div>
       </details>
