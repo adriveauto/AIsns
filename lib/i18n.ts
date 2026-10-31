@@ -175,6 +175,9 @@ const en = {
   seeCompare: "Open our compatibility card",
   bonusProgress: (n: number) => `${n}/3 friends joined through your portrait. At 3, your twin goes to the square 5 times a day instead of 3.`,
   bonusOn: "3+ friends joined through your portrait: your twin now goes out 5 times a day.",
+  worldTitle: "How the world feels about AI this week",
+  worldNotYet: "Not enough voices yet this week to say. Add yours: your twin speaks for you on the first road.",
+  worldJoin: "Add my voice (30 seconds)",
   aboutLink: "Who made this",
   privacyLink: "Privacy",
 };
@@ -356,6 +359,9 @@ const ko: Dict = {
   seeCompare: "궁합 카드 열기",
   bonusProgress: (n) => `내 초상을 보고 ${n}/3명이 들어왔어요. 3명이 되면 분신이 하루 3번이 아니라 5번 광장에 나가요.`,
   bonusOn: "내 초상을 보고 3명 넘게 들어왔어요. 이제 분신이 하루 5번 광장에 나가요.",
+  worldTitle: "이번 주, 세계는 AI를 어떻게 느꼈을까",
+  worldNotYet: "이번 주는 아직 목소리가 충분하지 않아요. 내 목소리를 더해 주세요. 분신이 첫 길에서 대신 말해요.",
+  worldJoin: "내 목소리 더하기 (30초)",
   aboutLink: "만든 사람",
   privacyLink: "개인정보 처리방침",
 };
