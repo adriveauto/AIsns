@@ -5,7 +5,8 @@ import { dict } from "@/lib/i18n";
 import { guessLang } from "@/lib/langs";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ login?: string }> }) {
+  const failed = (await searchParams).login === "failed";
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,6 +19,7 @@ export default async function Home() {
       <p className="eyebrow">Unlabeled</p>
       <h1>{t.tagline}</h1>
       <p className="muted" style={{ fontSize: 17 }}>{t.intro}</p>
+      {failed && <p className="notice" role="alert">{t.loginFailed}</p>}
       <SignIn lang={lang} />
     </main>
   );
