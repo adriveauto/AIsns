@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShareButtons } from "@/components/ShareButtons";
 import { SignIn } from "@/components/SignIn";
 import { dict } from "@/lib/i18n";
@@ -20,6 +20,16 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
   const [copied, setCopied] = useState(false);
   const [res, setRes] = useState<Result | null>(null);
   const [intro, setIntro] = useState(true);
+  const [pair, setPair] = useState<{ path: string; body: string } | null>(null);
+
+  // Arrived from someone's card: compare the two portraits as soon as this one is drawn.
+  useEffect(() => {
+    if (!res || !refCode || refCode === res.code) return;
+    fetch("/api/compare", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ with: refCode, mine: res.code, lang }) })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.path && setPair(d))
+      .catch(() => {});
+  }, [res, refCode, lang]);
 
   async function draw(e: React.FormEvent) {
     e.preventDefault();
@@ -41,6 +51,17 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
           {res.view && <p dir="auto" style={{ fontFamily: "var(--f-display)", fontSize: 20 }}>“{res.view}”</p>}
           {res.title && <p className="small" style={{ opacity: 0.75 }}>{res.title}</p>}
         </div>
+        {refCode && (
+          <div className="card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <p className="eyebrow">{t.compareTitle}</p>
+            {pair ? (
+              <>
+                <p dir="auto">{pair.body}</p>
+                <div><a className="btn tag" href={pair.path}>{t.seeCompare}</a></div>
+              </>
+            ) : <p className="small muted">{t.comparing}</p>}
+          </div>
+        )}
         <ShareButtons code={res.code} lang={lang} />
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <h2>{t.keepTitle}</h2>

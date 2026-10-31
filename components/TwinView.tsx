@@ -205,7 +205,7 @@ export function TwinView({
       {twin.portrait_svg && (code ? <ShareButtons code={code} lang={me.lang} /> : (
         <div className="row">
           <button type="button" className="btn ghost" onClick={openShare}>{t.shareMine}</button>
-          {invites > 0 && <span className="small muted">{t.invitedCount(invites)}</span>}
+          <span className="small muted">{invites >= 3 ? t.bonusOn : t.bonusProgress(invites)}</span>
         </div>
       ))}
 

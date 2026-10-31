@@ -3,6 +3,9 @@ import { LANGS, isLang } from "./langs";
 import { createServiceClient } from "./supabase/server";
 
 export const VISITS_PER_DAY = 3;
+// Bringing in friends earns the twin more trips to the square.
+export const INVITES_FOR_BONUS = 3;
+export const BONUS_VISITS_PER_DAY = 5;
 const MODEL = process.env.TWIN_MODEL ?? "claude-sonnet-5-5";
 
 export type TwinPrivate = {
@@ -88,7 +91,9 @@ export async function runVisit(owner: string) {
   const db = createServiceClient();
   const since = new Date(Date.now() - 864e5).toISOString();
   const { count } = await db.from("twin_diary").select("id", { count: "exact", head: true }).eq("owner", owner).gte("created_at", since);
-  if ((count ?? 0) >= VISITS_PER_DAY) return { skipped: "limit" as const };
+  const { count: invited } = await db.from("profiles").select("id", { count: "exact", head: true }).eq("invited_by", owner);
+  const limit = (invited ?? 0) >= INVITES_FOR_BONUS ? BONUS_VISITS_PER_DAY : VISITS_PER_DAY;
+  if ((count ?? 0) >= limit) return { skipped: "limit" as const };
 
   const [{ data: twin }, { data: priv }] = await Promise.all([
     db.from("twins").select("owner, name, bio, topics, lang").eq("owner", owner).single(),

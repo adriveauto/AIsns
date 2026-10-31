@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CompareButton } from "@/components/CompareButton";
 import { ShareButtons } from "@/components/ShareButtons";
 import { getCard } from "@/lib/cards";
 import { dict } from "@/lib/i18n";
@@ -41,7 +41,7 @@ export default async function CardPage({ params }: Props) {
       </section>
       <h2>{t.cardOgCta}</h2>
       <p className="muted">{t.tryPitch}</p>
-      <Link href={`/?ref=${card.code}`} className="btn tag" style={{ textAlign: "center" }}>{t.makeMine}</Link>
+      <CompareButton code={card.code} label={t.compareWithMine} busyLabel={t.comparing} lang={lang} />
       <ShareButtons code={card.code} lang={lang} />
     </main>
   );
