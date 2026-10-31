@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { randomAlias } from "@/lib/alias";
 import { REF_COOKIE, TRIAL_COOKIE, claimTrial, inviterOf } from "@/lib/cards";
 import { guessLang } from "@/lib/langs";
 import { createClient } from "@/lib/supabase/server";
+import { runVisit } from "@/lib/twin";
 
 // First visit after signing in: nothing to fill in. Name and language are picked
 // for you (change them any time under My labels), and a portrait drawn before
@@ -30,6 +31,8 @@ export async function GET(req: Request) {
     if (error) return new NextResponse("Could not create your profile. Please try again in a minute.", { status: 500 });
   }
   const claimed = await claimTrial(trialCode, user.id, lang, meta.intro === "1").catch(() => false);
+  // The twin's first trip to the square starts now, so the first report is waiting within a minute.
+  if (claimed) after(() => runVisit(user.id).catch(() => null));
   const res = NextResponse.redirect(new URL(claimed ? "/twin?welcome=1" : "/twin", origin));
   res.cookies.delete(TRIAL_COOKIE);
   res.cookies.delete(REF_COOKIE);

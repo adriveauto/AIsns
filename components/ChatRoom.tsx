@@ -113,6 +113,22 @@ export function ChatRoom({
     setErr(error ? t.error : t.reported);
   }
 
+  // Share the reveal picture itself (KakaoTalk, Instagram, X…) where the phone allows it; otherwise save it.
+  async function shareCard() {
+    const blob = await drawRevealCard({ alias: otherAlias, labels: theirLabels, messages: msgs.length, days: Math.max(1, days) });
+    const file = new File([blob], "unlabeled-reveal.png", { type: "image/png" });
+    const data = { files: [file], text: t.revealShareText, url: window.location.origin };
+    if (navigator.canShare?.(data)) {
+      try {
+        await navigator.share(data);
+      } catch {
+        /* dismissed */
+      }
+      return;
+    }
+    saveCard();
+  }
+
   async function saveCard() {
     const blob = await drawRevealCard({ alias: otherAlias, labels: theirLabels, messages: msgs.length, days: Math.max(1, days) });
     const a = document.createElement("a");
@@ -142,8 +158,10 @@ export function ChatRoom({
           <div className="row">
             {theirLabels.map((l) => <span key={l} className="label">{l}</span>)}
           </div>
+          <p className="small">{t.revealSharePrompt}</p>
           <div className="row">
-            <button type="button" className="btn tag" onClick={saveCard}>{t.saveCard}</button>
+            <button type="button" className="btn tag" onClick={shareCard}>{t.revealShare}</button>
+            <button type="button" className="btn ghost" onClick={saveCard}>{t.saveCard}</button>
           </div>
         </section>
       ) : (

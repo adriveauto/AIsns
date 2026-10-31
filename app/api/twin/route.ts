@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { cardForOwner } from "@/lib/cards";
 import { extractNeeds } from "@/lib/match";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { createPersona, drawPortrait, type TwinPrivate } from "@/lib/twin";
+import { createPersona, drawPortrait, runVisit, type TwinPrivate } from "@/lib/twin";
 
 // Create or rebuild the signed-in person's twin.
 export async function POST(req: Request) {
@@ -38,6 +38,9 @@ export async function POST(req: Request) {
     await db.from("twin_private").upsert({ owner: user.id, ...privRow, ...(needs ? { needs } : {}), updated_at: new Date().toISOString() });
     await db.from("twins").upsert({ owner: user.id, lang: profile.lang, ...persona, ...(portrait ?? { ai_source }) });
     if (portrait) await cardForOwner(user.id).catch(() => null);
+    // A brand-new twin goes out right away; a rebuilt one waits for its usual trips.
+    const { count } = await db.from("twin_diary").select("id", { count: "exact", head: true }).eq("owner", user.id);
+    if (!count) after(() => runVisit(user.id).catch(() => null));
     return NextResponse.json({ ...persona, portrait: !!portrait });
   } catch {
     return NextResponse.json({ error: "could not create twin" }, { status: 502 });

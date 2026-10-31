@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Introductions, type Intro } from "@/components/Introductions";
 import { ShareButtons } from "@/components/ShareButtons";
 import type { Needs } from "@/lib/match";
@@ -93,6 +93,15 @@ export function TwinView({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [code, setCode] = useState<string | null>(null);
+
+  // Waiting for the twin's first trip: check back a few times instead of asking people to refresh.
+  const firstTrip = !!twin && diary.length === 0;
+  useEffect(() => {
+    if (!firstTrip) return;
+    let n = 0;
+    const id = setInterval(() => (++n > 8 ? clearInterval(id) : router.refresh()), 10000);
+    return () => clearInterval(id);
+  }, [firstTrip, router]);
 
   async function openShare() {
     const r = await fetch("/api/share", { method: "POST" });
@@ -213,7 +222,7 @@ export function TwinView({
 
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <p className="eyebrow">{t.diary}</p>
-        {diary.length === 0 && <p className="small muted">{t.noDiary}</p>}
+        {diary.length === 0 && <p className="small muted">{t.firstTrip}</p>}
         {diary.map((e) => (
           <div key={e.id} style={{ borderLeft: "3px solid var(--tag)", paddingLeft: 12, display: "flex", flexDirection: "column", gap: 6 }}>
             <span className="stats">{new Date(e.created_at).toLocaleString(me.lang)}</span>
