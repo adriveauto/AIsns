@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LogoMark } from "@/components/Icons";
 import { ShareButtons } from "@/components/ShareButtons";
+import { PublicHeader, SiteFooter } from "@/components/SiteChrome";
 import { getCard } from "@/lib/cards";
 import { dict } from "@/lib/i18n";
 import { guessLang } from "@/lib/langs";
@@ -32,17 +34,24 @@ export default async function CardPage({ params }: Props) {
   const t = dict(lang);
   const by = card.ai_source && card.ai_source !== "Other" ? card.ai_source : "AI";
   return (
-    <main style={{ paddingTop: 32 }}>
-      <p className="eyebrow">Unlabeled · {t.seesThem(by)}</p>
-      <section className="card qcard" style={{ alignItems: "center", textAlign: "center" }}>
-        <img src={svgSrc(card.svg)} alt={card.title ?? ""} width={220} height={220} style={{ borderRadius: 32, margin: "0 auto" }} />
-        {card.view && <p dir="auto" style={{ fontFamily: "var(--f-display)", fontSize: 20 }}>“{card.view}”</p>}
-        {card.title && <p className="small" style={{ opacity: 0.75 }}>{card.title}</p>}
-      </section>
-      <h2>{t.cardOgCta}</h2>
-      <p className="muted">{t.tryPitch}</p>
-      <Link href={`/?ref=${card.code}`} className="btn tag" style={{ textAlign: "center" }}>{t.makeMine}</Link>
-      <ShareButtons code={card.code} lang={lang} />
-    </main>
+    <>
+      <PublicHeader t={t} />
+      <main style={{ paddingTop: 40, maxWidth: 520 }}>
+        <figure className="portrait-card" style={{ margin: 0, maxWidth: "none" }}>
+          <p className="eyebrow">{t.seesThem(by)}</p>
+          <img src={svgSrc(card.svg)} alt={card.title ?? ""} width={240} height={240} />
+          {card.view && <p className="quote" dir="auto">“{card.view}”</p>}
+          {card.title && <p className="small">{card.title}</p>}
+          <span className="brandline"><LogoMark /> Unlabeled</span>
+        </figure>
+        <div className="card" style={{ padding: 24, gap: 14, textAlign: "center", alignItems: "center" }}>
+          <h2 className="serif" style={{ fontWeight: 400, fontSize: 32, lineHeight: 1.1 }}>{t.cardOgCta}</h2>
+          <p className="muted">{t.tryPitch}</p>
+          <Link href={`/?ref=${card.code}#try`} className="btn lg block">{t.makeMine}</Link>
+        </div>
+        <ShareButtons code={card.code} lang={lang} />
+      </main>
+      <SiteFooter t={t} />
+    </>
   );
 }

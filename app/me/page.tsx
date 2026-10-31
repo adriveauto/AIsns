@@ -1,4 +1,4 @@
-import { Nav } from "@/components/Nav";
+import { Nav, PageHead } from "@/components/Nav";
 import { ProfileForm } from "@/components/ProfileForm";
 import { SignOut } from "@/components/SignOut";
 import { dict } from "@/lib/i18n";
@@ -12,6 +12,7 @@ export default async function Me() {
     <>
       <Nav t={t} active="me" alias={profile.alias} />
       <main>
+        <PageHead title={t.meTitle} sub={t.meSub} />
         <ProfileForm
           userId={profile.id}
           initial={{ alias: profile.alias, lang: profile.lang }}

@@ -1,4 +1,4 @@
-import { Nav } from "@/components/Nav";
+import { Nav, PageHead } from "@/components/Nav";
 import { RecipeForm, type Draft } from "@/components/RecipeForm";
 import { dict } from "@/lib/i18n";
 import { RECIPE_COLUMNS, type Recipe } from "@/lib/recipes";
@@ -33,7 +33,7 @@ export default async function NewRecipe({ searchParams }: { searchParams: Promis
     <>
       <Nav t={t} active="recipes" alias={profile.alias} />
       <main>
-        <p className="small muted">{t.creditRule}</p>
+        <PageHead title={t.newRecipeTitle} sub={t.creditRule} />
         <RecipeForm me={profile} draft={draft} mergeIds={mergeIds.length === 2 ? mergeIds : []} />
       </main>
     </>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Translated, translate } from "@/components/Translated";
@@ -129,7 +130,9 @@ export function ChatRoom({
 
   return (
     <main>
-      <div className="row">
+      <div className="chat-head">
+        <Link href="/chats" className="link" aria-label={t.back}>←</Link>
+        <span className="avatar" style={{ width: 40, height: 40, fontSize: 15 }}>{otherAlias.slice(0, 1)}</span>
         <h2 className="grow">{otherAlias}</h2>
         <button type="button" className="link" onClick={report}>{t.report}</button>
         <button type="button" className="link" onClick={block}>{t.block}</button>

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Nav } from "@/components/Nav";
+import { IconChats, IconChevron } from "@/components/Icons";
+import { Nav, PageHead } from "@/components/Nav";
 import { dict } from "@/lib/i18n";
 import { requireProfile } from "@/lib/session";
 
@@ -22,18 +23,30 @@ export default async function Chats() {
     <>
       <Nav t={t} active="chats" alias={profile.alias} />
       <main>
+        <PageHead title={t.chatsTitle} sub={t.chatsSub} />
         {visible.length === 0 ? (
-          <p className="muted">{t.noChats}</p>
+          <div className="card empty">
+            <IconChats />
+            <p>{t.noChats}</p>
+            <Link href="/today" className="btn">{t.tabToday}</Link>
+          </div>
         ) : (
-          visible.map((c) => {
-            const other = c.user_a === profile.id ? c.user_b : c.user_a;
-            return (
-              <Link key={c.id} href={`/chats/${c.id}`} className="card" style={{ textDecoration: "none" }}>
-                <h3>{aliasOf.get(other) ?? "—"}</h3>
-                <span className="small muted">{new Date(c.last_message_at).toLocaleString(profile.lang)}</span>
-              </Link>
-            );
-          })
+          <div className="list">
+            {visible.map((c) => {
+              const other = c.user_a === profile.id ? c.user_b : c.user_a;
+              const name = aliasOf.get(other) ?? "—";
+              return (
+                <Link key={c.id} href={`/chats/${c.id}`}>
+                  <span className="avatar">{name.slice(0, 1)}</span>
+                  <span className="grow stack" style={{ gap: 2 }}>
+                    <span className="alias">{name}</span>
+                    <span className="small muted">{new Date(c.last_message_at).toLocaleString(profile.lang, { dateStyle: "medium", timeStyle: "short" })}</span>
+                  </span>
+                  <IconChevron className="chev" />
+                </Link>
+              );
+            })}
+          </div>
         )}
       </main>
     </>
