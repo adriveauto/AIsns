@@ -69,3 +69,7 @@ export function siteHost(): string {
     return "aisns.vercel.app";
   }
 }
+
+export function siteUrl(): string {
+  return `https://${siteHost()}`;
+}

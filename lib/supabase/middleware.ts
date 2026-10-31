@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { setupBlocked } from "@/lib/setup";
 
-const PUBLIC_PATHS = ["/", "/auth/callback", "/auth/confirm", "/manifest.webmanifest", "/icon.svg", "/about", "/privacy", "/opengraph-image", "/world", "/world/opengraph-image"];
+const PUBLIC_PATHS = ["/", "/auth/callback", "/auth/confirm", "/manifest.webmanifest", "/icon.svg", "/about", "/privacy", "/opengraph-image", "/world", "/world/opengraph-image", "/q", "/q/opengraph-image"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

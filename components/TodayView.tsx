@@ -58,6 +58,24 @@ export function TodayView({
       .finally(() => setGuessing(false));
   }, [hasTwin, guess, mine]);
 
+  // Share today's question with a friend; the link carries the portrait code so they land as our invitee.
+  async function shareGuess() {
+    const r = await fetch("/api/share", { method: "POST" }).catch(() => null);
+    const code = r && r.ok ? (await r.json()).code : null;
+    const url = `${window.location.origin}/q${code ? `?ref=${code}` : ""}`;
+    const text = t.shareGuessText(knows ? knows.pct : null);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Unlabeled", text, url });
+      } catch {}
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setErr(t.copied);
+    } catch {}
+  }
+
   async function mark(v: "right" | "close" | "wrong") {
     setVerdict(v);
     if (v === "wrong") setText("");
@@ -119,7 +137,10 @@ export function TodayView({
             <>
               <p className="guess-text" dir="auto">“{guess}”</p>
               {verdict ? (
-                <p className="small muted">{t.twinGuessThanks[verdict as "right" | "close" | "wrong"]}</p>
+                <div className="row">
+                  <p className="small muted grow">{t.twinGuessThanks[verdict as "right" | "close" | "wrong"]}</p>
+                  <button type="button" className="btn tag" onClick={shareGuess}>{t.shareGuess}</button>
+                </div>
               ) : (
                 <div className="row">
                   <button type="button" className="btn" onClick={() => mark("right")}>{t.guessRight}</button>

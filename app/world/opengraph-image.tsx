@@ -40,6 +40,6 @@ export default async function Image() {
         </div>
       </div>
     ),
-    size,
+    { ...size, fonts: font ? [{ name: "card", data: font, weight: 700, style: "normal" }] : undefined },
   );
 }
