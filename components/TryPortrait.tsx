@@ -7,7 +7,7 @@ import { dict } from "@/lib/i18n";
 import type { Lang } from "@/lib/langs";
 
 const svgSrc = (svg: string) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
-type Result = { code: string; claim: string; svg: string; title: string; view: string };
+type Result = { code: string; claim: string; svg: string; title: string; view: string; found?: number; stats?: { twins: number; langs: number } | null };
 
 // The first thing anyone sees: ask your own AI how it sees you, paste the answer, get a portrait.
 // No account needed. Signing up afterwards turns the portrait into your twin with nothing to type.
@@ -19,6 +19,7 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(false);
   const [res, setRes] = useState<Result | null>(null);
+  const [intro, setIntro] = useState(true);
 
   async function draw(e: React.FormEvent) {
     e.preventDefault();
@@ -43,8 +44,23 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
         <ShareButtons code={res.code} lang={lang} />
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <h2>{t.keepTitle}</h2>
-          <p className="small">{t.keepPitch}</p>
-          <SignIn lang={lang} trial={res.claim} refCode={refCode} />
+          {!!res.found && (
+            <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <strong dir="auto">{t.trialFound(res.found)}</strong>
+              <div className="row" aria-hidden="true">
+                {Array.from({ length: Math.min(res.found, 3) }, (_, i) => (
+                  <div key={i} style={{ width: 44, height: 44, borderRadius: 12, background: "var(--line)", filter: "blur(2px)" }} />
+                ))}
+              </div>
+              <span className="small">{t.trialFoundHint}</span>
+            </div>
+          )}
+          <p className="small">{t.trialWhatTwinDoes}</p>
+          <label className="small" style={{ display: "flex", gap: 8, alignItems: "flex-start", flexDirection: "row" }}>
+            <input type="checkbox" checked={intro} onChange={(e) => setIntro(e.target.checked)} style={{ width: "auto", marginTop: 3 }} />
+            <span>{t.trialIntroOk}</span>
+          </label>
+          <SignIn lang={lang} trial={res.claim} refCode={refCode} intro={intro} />
         </div>
       </section>
     );

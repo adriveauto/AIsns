@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.redirect(new URL("/", origin));
 
   const jar = await cookies();
-  const meta = (user.user_metadata ?? {}) as { trial?: string; ref?: string };
+  const meta = (user.user_metadata ?? {}) as { trial?: string; ref?: string; intro?: string };
   const refCode = jar.get(REF_COOKIE)?.value ?? meta.ref;
   const trialCode = jar.get(TRIAL_COOKIE)?.value ?? meta.trial;
   const { data: existing } = await supabase.from("profiles").select("id, lang").eq("id", user.id).maybeSingle();
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     if (error) ({ error } = await supabase.from("profiles").insert({ id: user.id, alias: randomAlias(), lang }));
     if (error) return new NextResponse("Could not create your profile. Please try again in a minute.", { status: 500 });
   }
-  const claimed = await claimTrial(trialCode, user.id, lang).catch(() => false);
+  const claimed = await claimTrial(trialCode, user.id, lang, meta.intro === "1").catch(() => false);
   const res = NextResponse.redirect(new URL(claimed ? "/twin?welcome=1" : "/twin", origin));
   res.cookies.delete(TRIAL_COOKIE);
   res.cookies.delete(REF_COOKIE);

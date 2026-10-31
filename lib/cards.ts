@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { extractNeeds } from "./match";
+import { asNeeds, extractNeeds } from "./match";
 import { createPersona } from "./twin";
 import { createServiceClient } from "./supabase/server";
 
@@ -48,18 +48,19 @@ export async function inviterOf(ref: string | undefined, self: string): Promise<
 }
 
 // Turn a portrait drawn before signing up into the new person's twin, with no extra typing.
-export async function claimTrial(token: string | undefined, owner: string, lang: string): Promise<boolean> {
+export async function claimTrial(token: string | undefined, owner: string, lang: string, matchOk = false): Promise<boolean> {
   if (!token || token.length < 20) return false;
   const db = createServiceClient();
-  const { data: card } = await db.from("portrait_cards").select("code, owner, svg, title, view, ai_source, ai_answer").eq("claim_token", token).maybeSingle();
+  const { data: card } = await db.from("portrait_cards").select("code, owner, svg, title, view, ai_source, ai_answer, needs").eq("claim_token", token).maybeSingle();
   if (!card || card.owner || !card.ai_answer) return false;
   const { data: had } = await db.from("twins").select("owner").eq("owner", owner).maybeSingle();
   if (had) return false;
   const priv = { interests: card.ai_answer.slice(0, 400), work: null, style: null, bounds: null, ai_answer: card.ai_answer };
-  const [persona, needs] = await Promise.all([createPersona(priv, lang), extractNeeds(priv, lang).catch(() => null)]);
-  await db.from("twin_private").upsert({ owner, ...priv, ...(needs ? { needs } : {}), updated_at: new Date().toISOString() });
+  const known = asNeeds(card.needs);
+  const [persona, needs] = await Promise.all([createPersona(priv, lang), known ? Promise.resolve(known) : extractNeeds(priv, lang).catch(() => null)]);
+  await db.from("twin_private").upsert({ owner, ...priv, ...(needs ? { needs, match_ok: matchOk } : {}), updated_at: new Date().toISOString() });
   await db.from("twins").upsert({ owner, lang, ...persona, portrait_svg: card.svg, portrait_title: card.title, ai_view: card.view, ai_source: card.ai_source });
   await db.from("portrait_cards").delete().eq("owner", owner);
-  await db.from("portrait_cards").update({ owner, ai_answer: null, claim_token: null }).eq("code", card.code);
+  await db.from("portrait_cards").update({ owner, ai_answer: null, claim_token: null, needs: null }).eq("code", card.code);
   return true;
 }

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { TRIAL_COOKIE, newCode, newToken } from "@/lib/cards";
 import { isLang } from "@/lib/langs";
 import { createServiceClient } from "@/lib/supabase/server";
+import { asNeeds, extractNeeds, overlap } from "@/lib/match";
 import { drawPortrait } from "@/lib/twin";
 
 const PER_IP = 3;
@@ -26,13 +27,27 @@ export async function POST(req: Request) {
   if (!allowed) return NextResponse.json({ error: "limit" }, { status: 429 });
 
   try {
-    const p = await drawPortrait({ interests: "", work: null, style: null, bounds: null, ai_answer, ai_source }, "", lang);
+    const priv = { interests: "", work: null, style: null, bounds: null, ai_answer, ai_source };
+    const [p, needs, stats] = await Promise.all([
+      drawPortrait(priv, "", lang),
+      extractNeeds(priv, lang).catch(() => null),
+      db.rpc("square_stats").then((r) => (Array.isArray(r.data) ? r.data[0] : r.data) as { twins: number; langs: number } | null, () => null),
+    ]);
+    // How many people who said yes to introductions this person would already match. A real count, never padded.
+    let found = 0;
+    if (needs) {
+      const { data: pool } = await db.from("twin_private").select("needs").eq("match_ok", true).not("needs", "is", null).limit(1000);
+      found = (pool ?? []).filter((c) => {
+        const n = asNeeds(c.needs);
+        return n && overlap(needs, n) >= 3;
+      }).length;
+    }
     const code = newCode();
     const claim = newToken();
-    const { error } = await db.from("portrait_cards").insert({ code, claim_token: claim, svg: p.portrait_svg, title: p.portrait_title, view: p.ai_view, ai_source, ai_answer, lang });
+    const { error } = await db.from("portrait_cards").insert({ code, claim_token: claim, svg: p.portrait_svg, title: p.portrait_title, view: p.ai_view, ai_source, ai_answer, lang, needs });
     if (error) throw error;
     (await cookies()).set(TRIAL_COOKIE, claim, { maxAge: 60 * 60 * 24 * 7, httpOnly: true, sameSite: "lax", secure: true, path: "/" });
-    return NextResponse.json({ code, claim, svg: p.portrait_svg, title: p.portrait_title, view: p.ai_view });
+    return NextResponse.json({ code, claim, svg: p.portrait_svg, title: p.portrait_title, view: p.ai_view, found, stats });
   } catch {
     return NextResponse.json({ error: "draw_failed" }, { status: 502 });
   }

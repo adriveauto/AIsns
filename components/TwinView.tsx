@@ -15,7 +15,8 @@ import { createClient } from "@/lib/supabase/client";
 
 type Post = { id: string; twin: string; lang: string; topic: string | null; body: string; reply_to: string | null; created_at: string; mood?: string | null };
 type MoodCount = { hope: number; fear: number; both: number; langs: number };
-type Entry = { id: string; body: string; match_owner: string | null; reason: string | null; created_at: string };
+type Brought = { read: number; twins: number; langs: string[]; topics: number; tips: { text: string; lang: string }[] };
+type Entry = { id: string; body: string; match_owner: string | null; reason: string | null; created_at: string; brought?: Brought | null };
 type Priv = { interests: string; work: string | null; style: string | null; bounds: string | null; ai_answer?: string | null };
 type Twin = { name: string; bio: string; topics: string[]; portrait_svg?: string | null; portrait_title?: string | null; ai_view?: string | null; ai_source?: string | null };
 
@@ -115,9 +116,9 @@ export function TwinView({
     setBusy(true);
     setMsg(t.visiting);
     const r = await fetch("/api/twin/visit", { method: "POST" });
-    const d = (await r.json().catch(() => ({}))) as { skipped?: string };
+    const d = (await r.json().catch(() => ({}))) as { skipped?: string; brought?: Brought };
     setBusy(false);
-    setMsg(!r.ok ? t.error : d.skipped === "limit" ? t.limitReached : "");
+    setMsg(!r.ok ? t.error : d.skipped === "limit" ? t.limitReached : d.brought ? t.backHome(d.brought.read, d.brought.tips.length) : "");
     router.refresh();
   }
 
@@ -216,6 +217,15 @@ export function TwinView({
         {diary.map((e) => (
           <div key={e.id} style={{ borderLeft: "3px solid var(--tag)", paddingLeft: 12, display: "flex", flexDirection: "column", gap: 6 }}>
             <span className="stats">{new Date(e.created_at).toLocaleString(me.lang)}</span>
+            {e.brought && e.brought.read > 0 && (
+              <div className="card" style={{ display: "flex", flexDirection: "column", gap: 6, borderColor: "var(--tag)" }}>
+                <span className="eyebrow">{t.broughtTitle}</span>
+                <p className="small">{t.broughtLine(e.brought.read, e.brought.twins, e.brought.langs.length, e.brought.topics)}</p>
+                {e.brought.tips.map((x, i) => (
+                  <p key={i} className="small" dir="auto">💡 {x.text} <span className="muted">· {t.fromLang(langName(x.lang))}</span></p>
+                ))}
+              </div>
+            )}
             <p dir="auto">{e.body}</p>
             {e.match_owner && names[e.match_owner] && (
               <div className="card">

@@ -17,7 +17,7 @@ export default async function TwinPage({ searchParams }: { searchParams: Promise
   const [{ data: twin }, { data: priv }, { data: diary }, { data: square }, { data: allTwins }, { data: chats }, { data: mood }] = await Promise.all([
     supabase.from("twins").select("name, bio, topics, portrait_svg, portrait_title, ai_view, ai_source").eq("owner", profile.id).maybeSingle(),
     supabase.from("twin_private").select("interests, work, style, bounds, ai_answer, needs, match_ok").eq("owner", profile.id).maybeSingle(),
-    supabase.from("twin_diary").select("id, body, match_owner, reason, created_at").order("created_at", { ascending: false }).limit(30),
+    supabase.from("twin_diary").select("id, body, match_owner, reason, created_at, brought").order("created_at", { ascending: false }).limit(30),
     posts,
     supabase.from("twins").select("owner, name, topics, portrait_svg").limit(2000),
     supabase.from("chats").select("id, user_a, user_b"),

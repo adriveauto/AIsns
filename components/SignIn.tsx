@@ -6,7 +6,7 @@ import type { Lang } from "@/lib/langs";
 import { createClient } from "@/lib/supabase/client";
 
 // trial and ref ride along in the sign-up metadata, so they survive a magic link opened in another browser.
-export function SignIn({ lang, trial, refCode }: { lang: Lang; trial?: string; refCode?: string }) {
+export function SignIn({ lang, trial, refCode, intro }: { lang: Lang; trial?: string; refCode?: string; intro?: boolean }) {
   const t = dict(lang);
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
@@ -18,7 +18,7 @@ export function SignIn({ lang, trial, refCode }: { lang: Lang; trial?: string; r
   async function sendLink(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(), data: { ...(trial ? { trial } : {}), ...(refCode ? { ref: refCode } : {}) } } });
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(), data: { ...(trial ? { trial } : {}), ...(refCode ? { ref: refCode } : {}), ...(intro ? { intro: "1" } : {}) } } });
     // Supabase's built-in mailer allows only a few emails an hour; say so instead of a vague error.
     const limited = error && (error.status === 429 || /rate limit/i.test(error.message));
     setMsg(!error ? t.linkSent : limited ? t.emailLimited : t.error);
