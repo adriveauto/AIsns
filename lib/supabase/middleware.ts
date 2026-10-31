@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { setupBlocked } from "@/lib/setup";
 
-const PUBLIC_PATHS = ["/", "/auth/callback", "/manifest.webmanifest", "/icon.svg"];
+const PUBLIC_PATHS = ["/", "/auth/callback", "/manifest.webmanifest", "/icon.svg", "/about", "/privacy", "/opengraph-image"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -30,11 +30,14 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.includes(path) || path.startsWith("/api") || path === "/recipes" || /^\/recipes\/[0-9a-f-]{36}$/.test(path);
+  const isPublic = PUBLIC_PATHS.includes(path) || path.startsWith("/api") || path === "/recipes" || path.startsWith("/p/") || /^\/recipes\/[0-9a-f-]{36}$/.test(path);
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
+  // Remember whose portrait card brought this visitor, so the inviter can see it worked.
+  const ref = request.nextUrl.searchParams.get("ref");
+  if (ref && /^[a-z0-9]{8}$/.test(ref) && !user) response.cookies.set("ul_ref", ref, { maxAge: 60 * 60 * 24 * 30, httpOnly: true, sameSite: "lax", secure: true, path: "/" });
   return response;
 }

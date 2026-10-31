@@ -5,7 +5,8 @@ import { dict } from "@/lib/i18n";
 import type { Lang } from "@/lib/langs";
 import { createClient } from "@/lib/supabase/client";
 
-export function SignIn({ lang }: { lang: Lang }) {
+// trial and ref ride along in the sign-up metadata, so they survive a magic link opened in another browser.
+export function SignIn({ lang, trial, refCode }: { lang: Lang; trial?: string; refCode?: string }) {
   const t = dict(lang);
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
@@ -17,7 +18,7 @@ export function SignIn({ lang }: { lang: Lang }) {
   async function sendLink(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo() } });
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(), data: { ...(trial ? { trial } : {}), ...(refCode ? { ref: refCode } : {}) } } });
     setMsg(error ? t.error : t.linkSent);
     setBusy(false);
   }

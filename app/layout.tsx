@@ -3,9 +3,15 @@ import { SetupNotice } from "@/components/SetupNotice";
 import { setupBlocked, setupProblems } from "@/lib/setup";
 import "./globals.css";
 
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://aisns.vercel.app";
+const DESC = "매일 쓰는 AI는 나를 어떻게 보고 있을까? Ask your AI one question and get a portrait of your mind. No account needed.";
+
 export const metadata: Metadata = {
-  title: "Unlabeled",
-  description: "Talk to anyone on Earth in your own language. No labels until you both say so.",
+  metadataBase: new URL(SITE),
+  title: "Unlabeled · 내 AI가 본 나",
+  description: DESC,
+  openGraph: { title: "Unlabeled · 내 AI가 본 나", description: DESC, siteName: "Unlabeled", type: "website", locale: "ko_KR", alternateLocale: ["en_US"], url: SITE },
+  twitter: { card: "summary_large_image", title: "Unlabeled · How does your AI see you?", description: DESC },
   appleWebApp: { capable: true, title: "Unlabeled", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };

@@ -4,8 +4,8 @@ import { FIRST_ROAD } from "@/lib/firstRoad";
 import { dict } from "@/lib/i18n";
 import { requireProfile } from "@/lib/session";
 
-export default async function TwinPage({ searchParams }: { searchParams: Promise<{ topic?: string; edit?: string }> }) {
-  const { topic, edit } = await searchParams;
+export default async function TwinPage({ searchParams }: { searchParams: Promise<{ topic?: string; edit?: string; welcome?: string }> }) {
+  const { topic, edit, welcome } = await searchParams;
   const { supabase, profile } = await requireProfile();
   const t = dict(profile.lang);
 
@@ -21,6 +21,7 @@ export default async function TwinPage({ searchParams }: { searchParams: Promise
     supabase.from("chats").select("id, user_a, user_b"),
     supabase.from("first_road_mood").select("hope, fear, both, langs").maybeSingle(),
   ]);
+  const { data: invites } = await supabase.rpc("my_invites");
 
   const names = Object.fromEntries((allTwins ?? []).map((x) => [x.owner, x.name]));
   const portraits = Object.fromEntries((allTwins ?? []).filter((x) => x.portrait_svg).map((x) => [x.owner, x.portrait_svg as string]));
@@ -46,6 +47,8 @@ export default async function TwinPage({ searchParams }: { searchParams: Promise
         activeTopic={topic ?? null}
         chatWith={chatWith}
         mood={!topic || topic === FIRST_ROAD ? mood : null}
+        welcome={!!welcome}
+        invites={typeof invites === "number" ? invites : 0}
       />
     </>
   );

@@ -10,6 +10,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const db = createServiceClient();
+  // Answers pasted before signing up are kept 7 days at most; the card itself stays shareable.
+  const week = new Date(Date.now() - 7 * 86400e3).toISOString();
+  await db.from("portrait_cards").update({ ai_answer: null, claim_token: null }).is("owner", null).lt("created_at", week).not("ai_answer", "is", null);
   const cutoff = new Date(Date.now() - 6 * 3600e3).toISOString();
   const { data: due } = await db
     .from("twins")

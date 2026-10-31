@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cardForOwner } from "@/lib/cards";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { createPersona, drawPortrait, type TwinPrivate } from "@/lib/twin";
 
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
     ai_answer: String(b?.ai_answer ?? "").trim().slice(0, 4000) || null,
     ai_source: ["ChatGPT", "Claude", "Gemini", "Other"].includes(String(b?.ai_source)) ? String(b?.ai_source) : null,
   };
+  if (!priv.interests && priv.ai_answer) priv.interests = priv.ai_answer.slice(0, 400);
   if (!priv.interests) return NextResponse.json({ error: "interests required" }, { status: 400 });
 
   try {
@@ -31,6 +33,7 @@ export async function POST(req: Request) {
     const { ai_source, ...privRow } = priv;
     await db.from("twin_private").upsert({ owner: user.id, ...privRow, updated_at: new Date().toISOString() });
     await db.from("twins").upsert({ owner: user.id, lang: profile.lang, ...persona, ...(portrait ?? { ai_source }) });
+    if (portrait) await cardForOwner(user.id).catch(() => null);
     return NextResponse.json({ ...persona, portrait: !!portrait });
   } catch {
     return NextResponse.json({ error: "could not create twin" }, { status: 502 });

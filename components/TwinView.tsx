@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ShareButtons } from "@/components/ShareButtons";
 import { Translated } from "@/components/Translated";
 import { FIRST_ROAD } from "@/lib/firstRoad";
 import { dict } from "@/lib/i18n";
@@ -60,6 +61,8 @@ export function TwinView({
   activeTopic,
   chatWith,
   mood,
+  welcome,
+  invites,
 }: {
   me: Profile;
   twin: Twin | null;
@@ -72,12 +75,22 @@ export function TwinView({
   activeTopic: string | null;
   chatWith: Record<string, string>;
   mood: MoodCount | null;
+  welcome: boolean;
+  invites: number;
 }) {
   const t = dict(me.lang);
   const router = useRouter();
   const [f, setF] = useState({ interests: priv?.interests ?? "", work: priv?.work ?? "", style: priv?.style ?? "", bounds: priv?.bounds ?? "", ai_answer: priv?.ai_answer ?? "", ai_source: twin?.ai_source ?? "ChatGPT" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [code, setCode] = useState<string | null>(null);
+
+  async function openShare() {
+    const r = await fetch("/api/share", { method: "POST" });
+    const d = (await r.json().catch(() => ({}))) as { code?: string };
+    if (d.code) setCode(d.code);
+    else setMsg(t.error);
+  }
 
   async function make(e: React.FormEvent) {
     e.preventDefault();
@@ -114,11 +127,6 @@ export function TwinView({
       <main>
         <p className="muted">{t.twinIntro}</p>
         <form className="card" onSubmit={make}>
-          <label htmlFor="tw-i">{t.twinInterests}<textarea id="tw-i" required maxLength={400} dir="auto" value={f.interests} onChange={set("interests")} /></label>
-          <label htmlFor="tw-w">{t.twinWork}<input id="tw-w" maxLength={120} dir="auto" value={f.work} onChange={set("work")} /></label>
-          <label htmlFor="tw-s">{t.twinStyle}<input id="tw-s" maxLength={120} dir="auto" value={f.style} onChange={set("style")} /></label>
-          <label htmlFor="tw-b">{t.twinBounds}<input id="tw-b" maxLength={200} dir="auto" value={f.bounds} onChange={set("bounds")} /></label>
-          <p className="eyebrow">{t.portraitHeading}</p>
           <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <p>{t.portraitHow}</p>
             <p dir="auto" style={{ color: "var(--ink)" }}>{t.portraitQuestion}</p>
@@ -130,7 +138,16 @@ export function TwinView({
             </select>
           </label>
           <label htmlFor="tw-a">{t.pasteAnswer}<textarea id="tw-a" maxLength={4000} rows={6} dir="auto" value={f.ai_answer} onChange={set("ai_answer")} /></label>
-          <button className="btn" type="submit" disabled={busy}>{busy ? t.makingTwin : t.makeTwin}</button>
+          <details open={!!priv}>
+            <summary className="small">{t.moreAboutYou}</summary>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+              <label htmlFor="tw-i">{t.twinInterests}<textarea id="tw-i" maxLength={400} dir="auto" value={f.interests} onChange={set("interests")} /></label>
+              <label htmlFor="tw-w">{t.twinWork}<input id="tw-w" maxLength={120} dir="auto" value={f.work} onChange={set("work")} /></label>
+              <label htmlFor="tw-s">{t.twinStyle}<input id="tw-s" maxLength={120} dir="auto" value={f.style} onChange={set("style")} /></label>
+              <label htmlFor="tw-b">{t.twinBounds}<input id="tw-b" maxLength={200} dir="auto" value={f.bounds} onChange={set("bounds")} /></label>
+            </div>
+          </details>
+          <button className="btn" type="submit" disabled={busy || (!f.ai_answer.trim() && !f.interests.trim())}>{busy ? t.makingTwin : t.makeTwin}</button>
           {msg && <p className="small muted" role="status">{msg}</p>}
         </form>
       </main>
@@ -153,6 +170,7 @@ export function TwinView({
 
   return (
     <main>
+      {welcome && <p className="notice" role="status">{t.welcomeTwin}</p>}
       <section className="card qcard">
         <p className="eyebrow">{t.myTwin}</p>
         <div className="row" style={{ alignItems: "flex-start", gap: 16 }}>
@@ -175,6 +193,12 @@ export function TwinView({
         <button type="button" className="btn tag" disabled={busy} onClick={visit}>{busy ? t.visiting : t.sendTwin}</button>
         <span className="small muted grow" role="status">{msg}</span>
       </div>
+      {twin.portrait_svg && (code ? <ShareButtons code={code} lang={me.lang} /> : (
+        <div className="row">
+          <button type="button" className="btn ghost" onClick={openShare}>{t.shareMine}</button>
+          {invites > 0 && <span className="small muted">{t.invitedCount(invites)}</span>}
+        </div>
+      ))}
 
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <p className="eyebrow">{t.diary}</p>
