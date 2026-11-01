@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { LANGS, isLang } from "@/lib/langs";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { allowGlobal, allowUser } from "@/lib/usage";
 
 type Item = { text: string; from: string };
 
@@ -82,6 +83,12 @@ export async function POST(req: Request) {
     .eq("target_lang", to)
     .in("source_hash", hashes);
   const hit = new Map((cached ?? []).map((r) => [r.source_hash as string, r.body as string]));
+
+  // Only texts that actually go to the model count toward the daily caps; cached ones are free.
+  const misses = clean.filter((item, i) => item.text && item.from !== to && !hit.has(hashes[i])).length;
+  if (!(await allowUser(user.id, "translate", misses)) || !(await allowGlobal(misses))) {
+    return NextResponse.json({ error: "limit" }, { status: 429 });
+  }
 
   const results = await Promise.all(
     clean.map(async (item, i) => {

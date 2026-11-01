@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { LANGS, isLang } from "@/lib/langs";
 import { RECIPE_COLUMNS, type Recipe } from "@/lib/recipes";
 import { createClient } from "@/lib/supabase/server";
+import { allowGlobal, allowUser } from "@/lib/usage";
 
 const MODEL = process.env.MERGE_MODEL ?? "claude-sonnet-5-5";
 
@@ -21,6 +22,8 @@ export async function POST(req: Request) {
   const { data } = await supabase.from("recipes").select(RECIPE_COLUMNS).in("id", ids);
   const recipes = (data ?? []) as Recipe[];
   if (recipes.length !== 2) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  if (!(await allowUser(user.id, "merge")) || !(await allowGlobal())) return NextResponse.json({ error: "limit" }, { status: 429 });
 
   const describe = (r: Recipe, n: number) =>
     `Recipe ${n}\nTitle: ${r.title}\nGoal: ${r.goal}\nTools: ${r.tools.join(", ")}\nSteps:\n${r.steps}\nPrompt:\n${r.prompt ?? "(none)"}`;

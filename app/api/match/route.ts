@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { asNeeds, extractNeeds, findHelpers } from "@/lib/match";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { allowUser } from "@/lib/usage";
 
 // Twin introductions: turn on or off, correct what the twin understood, or search now.
 export async function POST(req: Request) {
@@ -23,6 +24,9 @@ export async function POST(req: Request) {
       const needs = asNeeds(b.needs);
       await db.from("twin_private").update({ needs }).eq("owner", user.id);
       return NextResponse.json({ ok: true });
+    }
+    if ((b?.action === "on" || b?.action === "search") && !(await allowUser(user.id, "match"))) {
+      return NextResponse.json({ error: "limit" }, { status: 429 });
     }
     if (b?.action === "on") {
       let needs = asNeeds(priv.needs);

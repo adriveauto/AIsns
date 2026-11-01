@@ -3,7 +3,7 @@ import { NextResponse, after } from "next/server";
 import { randomAlias } from "@/lib/alias";
 import { REF_COOKIE, TRIAL_COOKIE, claimTrial, inviterOf } from "@/lib/cards";
 import { guessLang } from "@/lib/langs";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { runVisit } from "@/lib/twin";
 
 // First visit after signing in: nothing to fill in. Name and language are picked
@@ -25,9 +25,9 @@ export async function GET(req: Request) {
   const lang = existing?.lang ?? guessLang(req.headers.get("accept-language"));
   if (!existing) {
     const invited_by = await inviterOf(refCode, user.id).catch(() => null);
-    let { error } = await supabase.from("profiles").insert({ id: user.id, alias: randomAlias(), lang, invited_by });
-    // A database without the 0006 migration has no invited_by column; still let the person in.
-    if (error) ({ error } = await supabase.from("profiles").insert({ id: user.id, alias: randomAlias(), lang }));
+    const { error } = await supabase.from("profiles").insert({ id: user.id, alias: randomAlias(), lang });
+    // Who invited whom is written by the server only, so nobody can credit themselves.
+    if (!error && invited_by) await createServiceClient().from("profiles").update({ invited_by }).eq("id", user.id).then(() => null, () => null);
     if (error) return new NextResponse("Could not create your profile. Please try again in a minute.", { status: 500 });
   }
   const claimed = await claimTrial(trialCode, user.id, lang, meta.intro === "1").catch(() => false);

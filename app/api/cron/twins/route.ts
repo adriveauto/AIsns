@@ -7,7 +7,9 @@ const BATCH = 25;
 
 // Called by Vercel Cron (see vercel.json). Sends twins that have rested 6+ hours.
 export async function GET(req: Request) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Without a secret set, "Bearer undefined" would open the door, so refuse outright.
+  const secret = process.env.CRON_SECRET;
+  if (!secret || secret.length < 16 || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const db = createServiceClient();

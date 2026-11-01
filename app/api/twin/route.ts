@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { cardForOwner } from "@/lib/cards";
 import { extractNeeds } from "@/lib/match";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { allowUser } from "@/lib/usage";
 import { createPersona, drawPortrait, runVisit, type TwinPrivate } from "@/lib/twin";
 
 // Create or rebuild the signed-in person's twin.
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
   };
   if (!priv.interests && priv.ai_answer) priv.interests = priv.ai_answer.slice(0, 400);
   if (!priv.interests) return NextResponse.json({ error: "interests required" }, { status: 400 });
+  if (!(await allowUser(user.id, "twin"))) return NextResponse.json({ error: "limit" }, { status: 429 });
 
   try {
     const persona = await createPersona(priv, profile.lang);
