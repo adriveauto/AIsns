@@ -1,8 +1,11 @@
+import { createHash } from "node:crypto";
+import { headers } from "next/headers";
 import { NextResponse, after } from "next/server";
+import { isInappropriate } from "@/lib/moderate";
 import { cardForOwner } from "@/lib/cards";
 import { extractNeeds } from "@/lib/match";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { allowUser } from "@/lib/usage";
+import { allowIp, allowUser } from "@/lib/usage";
 import { createPersona, drawPortrait, runVisit, type TwinPrivate } from "@/lib/twin";
 
 // Create or rebuild the signed-in person's twin.
@@ -26,7 +29,11 @@ export async function POST(req: Request) {
   };
   if (!priv.interests && priv.ai_answer) priv.interests = priv.ai_answer.slice(0, 400);
   if (!priv.interests) return NextResponse.json({ error: "interests required" }, { status: 400 });
-  if (!(await allowUser(user.id, "twin"))) return NextResponse.json({ error: "limit" }, { status: 429 });
+  // Free portraits: 2 a day per person and per IP.
+  const ip = ((await headers()).get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const ipHash = createHash("sha256").update(ip + (process.env.CRON_SECRET ?? "")).digest("hex").slice(0, 32);
+  if (!(await allowUser(user.id, "twin")) || !(await allowIp(ipHash))) return NextResponse.json({ error: "limit" }, { status: 429 });
+  if (await isInappropriate(priv.ai_answer, priv.interests, priv.work, priv.style)) return NextResponse.json({ error: "blocked" }, { status: 422 });
 
   try {
     const persona = await createPersona(priv, profile.lang);

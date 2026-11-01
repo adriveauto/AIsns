@@ -32,6 +32,13 @@ Next.js 15 (App Router) · Supabase (Postgres, Auth, Realtime) · Anthropic API 
 
 Import the repository on Vercel, add the same environment variables, and set `NEXT_PUBLIC_SITE_URL` to the production URL. Set `CRON_SECRET` so the twin cron in `vercel.json` can run.
 
+## Safety and limits
+
+- Terms (`/terms`) and Privacy (`/privacy`) open as pop-ups from the footer on every page. Drawing a portrait and signing in require ticking "18 or older and agree".
+- Free portraits: 2 a day per IP and per account (`lib/usage.ts`, table `usage_hits`). All model calls share a daily cap (`AI_DAILY_CAP`). Also set a monthly limit in the Anthropic console.
+- Chat messages go through `/api/messages`; they and pasted portrait text are checked by `lib/moderate.ts` (OpenAI Moderation if `OPENAI_API_KEY` is set, otherwise Claude Haiku). Run migration 0012 only after this code is deployed: it stops browsers inserting messages directly.
+- Chat menu (⋯): report with a reason (stored in `reports.category`) or block, which hides the chat and stops any new chat between the two.
+
 ## Before a public launch
 
 - Moderation: run new answers, messages and recipes through an AI moderation check and hide flagged items pending review.

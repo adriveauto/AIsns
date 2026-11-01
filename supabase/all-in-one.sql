@@ -523,3 +523,13 @@ revoke all on function public.bump_usage(text, int, int) from public, anon, auth
 
 -- Old counters are not needed after a few days.
 create index if not exists usage_hits_day_idx on public.usage_hits (day);
+
+-- 0012_safety.sql
+-- Chat messages are now sent through the server (/api/messages), which checks them for
+-- sexual content, hate and violence first. Browsers may still read their own chats.
+drop policy if exists "messages: members send" on public.messages;
+revoke insert on public.messages from anon, authenticated;
+
+-- Reports carry a category so they can be sorted quickly.
+alter table public.reports add column if not exists category text
+  check (category in ('scam', 'sexual', 'abuse', 'hate', 'minor', 'spam', 'other'));

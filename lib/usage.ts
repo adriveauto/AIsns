@@ -7,7 +7,7 @@ const GLOBAL_CAP = Number(process.env.AI_DAILY_CAP ?? 20000);
 
 // Per person, per UTC day.
 export const LIMITS = {
-  twin: 6, // create or rebuild a twin (3 model calls each)
+  twin: 2, // create or rebuild a twin, which draws a new portrait (free portraits: 2 a day)
   merge: 20, // merge two recipes
   translate: 1500, // texts actually sent to the model (cached ones are free)
   match: 10, // "search now" for introductions
@@ -18,6 +18,13 @@ export const LIMITS = {
 export async function allowUser(userId: string, kind: keyof typeof LIMITS, n = 1): Promise<boolean> {
   if (n <= 0) return true;
   const { data, error } = await createServiceClient().rpc("bump_usage", { p_key: `u:${userId}:${kind}`, p_n: n, p_max: LIMITS[kind] });
+  return error ? true : data !== false;
+}
+
+// Portraits drawn from one IP today (hashed), shared by signed-out tries and signed-in twins.
+export const PORTRAITS_PER_IP = 2;
+export async function allowIp(ipHash: string): Promise<boolean> {
+  const { data, error } = await createServiceClient().rpc("bump_usage", { p_key: `ip:${ipHash}:portrait`, p_n: 1, p_max: PORTRAITS_PER_IP });
   return error ? true : data !== false;
 }
 

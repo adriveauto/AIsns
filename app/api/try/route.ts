@@ -5,15 +5,19 @@ import { TRIAL_COOKIE, newCode, newToken } from "@/lib/cards";
 import { isLang } from "@/lib/langs";
 import { createServiceClient } from "@/lib/supabase/server";
 import { asNeeds, extractNeeds, overlap } from "@/lib/match";
+import { isInappropriate } from "@/lib/moderate";
 import { drawPortrait } from "@/lib/twin";
+import { allowIp } from "@/lib/usage";
 
-const PER_IP = 3;
+// Free portraits per day, counted per IP across trying and signed-in twin drawings.
+const PER_IP = 2;
 const PER_DAY = Number(process.env.TRIAL_DAILY_CAP ?? 300);
 const SOURCES = ["ChatGPT", "Claude", "Gemini", "Other"];
 
 // Draw a portrait of the mind for someone who has not signed up yet.
 export async function POST(req: Request) {
-  const b = (await req.json().catch(() => null)) as { ai_answer?: string; ai_source?: string; lang?: string } | null;
+  const b = (await req.json().catch(() => null)) as { ai_answer?: string; ai_source?: string; lang?: string; agreed?: boolean } | null;
+  if (b?.agreed !== true) return NextResponse.json({ error: "consent" }, { status: 400 });
   const ai_answer = String(b?.ai_answer ?? "").trim().slice(0, 4000);
   if (ai_answer.length < 40) return NextResponse.json({ error: "too_short" }, { status: 400 });
   const lang = isLang(b?.lang) ? b.lang : "en";
@@ -24,7 +28,8 @@ export async function POST(req: Request) {
   const ipHash = createHash("sha256").update(ip + (process.env.CRON_SECRET ?? "")).digest("hex").slice(0, 32);
   const db = createServiceClient();
   const { data: allowed } = await db.rpc("bump_trial", { p_ip: ipHash, p_max: PER_IP, p_global: PER_DAY });
-  if (!allowed) return NextResponse.json({ error: "limit" }, { status: 429 });
+  if (!allowed || !(await allowIp(ipHash))) return NextResponse.json({ error: "limit" }, { status: 429 });
+  if (await isInappropriate(ai_answer)) return NextResponse.json({ error: "blocked" }, { status: 422 });
 
   try {
     const priv = { interests: "", work: null, style: null, bounds: null, ai_answer, ai_source };

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ShareButtons } from "@/components/ShareButtons";
+import { Consent } from "@/components/Legal";
+import { Alert } from "@/components/Modal";
 import { SignIn } from "@/components/SignIn";
 import { dict } from "@/lib/i18n";
 import type { Lang } from "@/lib/langs";
@@ -21,6 +23,8 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
   const [res, setRes] = useState<Result | null>(null);
   const [intro, setIntro] = useState(true);
   const [pair, setPair] = useState<{ path: string; body: string } | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [popup, setPopup] = useState("");
 
   // Arrived from someone's card: compare the two portraits as soon as this one is drawn.
   useEffect(() => {
@@ -33,13 +37,16 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
 
   async function draw(e: React.FormEvent) {
     e.preventDefault();
+    if (!agreed) return;
     setBusy(true);
     setErr("");
-    const r = await fetch("/api/try", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ai_answer: answer, ai_source: src, lang }) });
+    const r = await fetch("/api/try", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ai_answer: answer, ai_source: src, lang, agreed }) });
     const d = (await r.json().catch(() => ({}))) as Partial<Result> & { error?: string };
     setBusy(false);
     if (r.ok && d.code) return setRes(d as Result);
-    setErr(d.error === "limit" ? t.tryLimit : d.error === "too_short" ? t.tryTooShort : t.error);
+    if (d.error === "blocked") return setPopup(t.blockedContent);
+    if (d.error === "limit") return setPopup(t.dailyPortraitLimit);
+    setErr(d.error === "too_short" ? t.tryTooShort : t.error);
   }
 
   if (res) {
@@ -81,7 +88,7 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
             <input type="checkbox" checked={intro} onChange={(e) => setIntro(e.target.checked)} style={{ width: "auto", marginTop: 3 }} />
             <span>{t.trialIntroOk}</span>
           </label>
-          <SignIn lang={lang} trial={res.claim} refCode={refCode} intro={intro} />
+          <SignIn lang={lang} trial={res.claim} refCode={refCode} intro={intro} agreed />
         </div>
       </section>
     );
@@ -90,6 +97,7 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
   const ais = ["ChatGPT", "Claude", "Gemini", "Other"];
   return (
     <form className="card" onSubmit={draw} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Consent lang={lang} checked={agreed} onChange={setAgreed} id="consent-try" />
       <p className="eyebrow">{t.tryStep1}</p>
       <div className="row">
         {ais.map((x) => (
@@ -105,9 +113,10 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
       <label htmlFor="try-a" className="eyebrow">{t.tryStep2}
         <textarea id="try-a" required minLength={40} maxLength={4000} rows={6} dir="auto" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={t.tryPlaceholder} />
       </label>
-      <button className="btn" type="submit" disabled={busy || answer.trim().length < 40}>{busy ? t.drawing : t.drawMe}</button>
+      <button className="btn" type="submit" disabled={busy || !agreed || answer.trim().length < 40}>{busy ? t.drawing : t.drawMe}</button>
       {err && <p className="small muted" role="status">{err}</p>}
       <p className="small muted">{t.tryPrivacy}</p>
+      {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
     </form>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Introductions, type Intro } from "@/components/Introductions";
+import { Alert } from "@/components/Modal";
 import { ShareButtons } from "@/components/ShareButtons";
 import type { Needs } from "@/lib/match";
 import { Translated } from "@/components/Translated";
@@ -92,6 +93,7 @@ export function TwinView({
   const [f, setF] = useState({ interests: priv?.interests ?? "", work: priv?.work ?? "", style: priv?.style ?? "", bounds: priv?.bounds ?? "", ai_answer: priv?.ai_answer ?? "", ai_source: twin?.ai_source ?? "ChatGPT" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [popup, setPopup] = useState("");
   const [code, setCode] = useState<string | null>(null);
 
   // Waiting for the twin's first trip: check back a few times instead of asking people to refresh.
@@ -116,6 +118,11 @@ export function TwinView({
     setMsg(t.makingTwin);
     const r = await fetch("/api/twin", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
     setBusy(false);
+    const d = r.ok ? null : ((await r.json().catch(() => ({}))) as { error?: string });
+    if (d?.error === "limit" || d?.error === "blocked") {
+      setMsg("");
+      return setPopup(d.error === "limit" ? t.dailyPortraitLimit : t.blockedContent);
+    }
     setMsg(r.ok ? "" : t.error);
     if (r.ok) router.push("/twin");
     router.refresh();
@@ -143,6 +150,7 @@ export function TwinView({
     const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
     return (
       <main>
+        {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
         <p className="muted">{t.twinIntro}</p>
         <form className="card" onSubmit={make}>
           <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -188,6 +196,7 @@ export function TwinView({
 
   return (
     <main>
+      {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
       {welcome && <p className="notice" role="status">{t.welcomeTwin}</p>}
       <section className="card qcard">
         <p className="eyebrow">{t.myTwin}</p>

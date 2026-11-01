@@ -62,3 +62,26 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .chip{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
 .guess{border-style:dashed}
 .guess-text{font-size:1.1rem;line-height:1.5;margin:8px 0 12px}
+
+/* Pop-ups, consent, legal footer */
+.modal-back{position:fixed;inset:0;z-index:100;background:rgba(10,12,24,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.modal-body{overflow:auto;padding-right:4px}
+.legal h3{font-size:15px;margin:16px 0 4px}
+.legal p,.legal li{font-size:14px;line-height:1.6}
+.consent{display:flex;gap:8px;align-items:flex-start;text-align:left}
+.consent input{width:auto;margin-top:3px;flex:none}
+.consent label{display:block;flex-direction:row;font-size:13px;line-height:1.5;margin:0}
+.consent .link{font-size:inherit;display:inline;vertical-align:baseline}
+.legal-footer{justify-content:center;gap:14px;padding:24px 16px 96px;flex-wrap:wrap}
+.legal-footer .link{font-size:inherit;color:inherit}
+.btn.google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 18px;font-size:16px;background:#fff;color:#1f1f1f;border:1px solid #dadce0}
+.btn.google:disabled{opacity:.5}
+.menu-wrap{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;display:flex;flex-direction:column;min-width:160px;padding:6px;gap:2px}
+.menu button{background:none;border:0;text-align:left;padding:10px 12px;border-radius:8px;font:inherit;color:var(--ink);cursor:pointer}
+.menu button:hover{background:var(--line)}
+.menu button.danger{color:#c0392b}
+.reasons{display:flex;flex-direction:column;gap:6px}
+.reasons label{display:flex;gap:8px;align-items:center;flex-direction:row}
+.reasons input[type=radio]{width:auto}

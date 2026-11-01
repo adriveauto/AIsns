@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SignIn } from "@/components/SignIn";
 import { TryPortrait } from "@/components/TryPortrait";
@@ -33,10 +32,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ r
         <div style={{ marginTop: 12 }}><SignIn lang={lang} refCode={refCode} /></div>
       </details>
       <p className="small muted">{t.intro}</p>
-      <footer className="row small muted">
-        <Link href="/about" className="link">{t.aboutLink}</Link>
-        <Link href="/privacy" className="link">{t.privacyLink}</Link>
-      </footer>
     </main>
   );
 }

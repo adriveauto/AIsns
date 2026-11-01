@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { LegalFooter } from "@/components/Legal";
 import { SetupNotice } from "@/components/SetupNotice";
 import { setupBlocked, setupProblems } from "@/lib/setup";
 import "./globals.css";
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <div className="app">{problems.length ? <SetupNotice problems={problems} /> : children}</div>
+        <LegalFooter />
       </body>
     </html>
   );
