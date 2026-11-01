@@ -30,14 +30,14 @@ export function TermsText() {
       <h3>6. 무료 이용 한도</h3>
       <p>비용과 남용을 막기 위해 초상 생성 등은 하루 이용 횟수가 정해져 있습니다 (현재 하루 2회).</p>
       <h3>7. 탈퇴와 정지</h3>
-      <p>언제든 탈퇴하고 정보 삭제를 요청할 수 있습니다: {contact(true)}. 약관을 어기면 미리 알리지 않고 이용을 제한할 수 있습니다.</p>
+      <p>언제든 내 정보 화면의 &quot;계정 삭제&quot;로 바로 탈퇴하고 모든 정보를 지울 수 있으며, {contact(true)}로 요청할 수도 있습니다. 약관을 어기면 미리 알리지 않고 이용을 제한할 수 있습니다.</p>
       <h3>8. 책임의 한계</h3>
       <p>서비스는 있는 그대로 제공됩니다. 다른 이용자의 행동이나 AI가 만든 내용 때문에 생긴 손해는, 법이 허용하는 범위에서 책임지지 않습니다.</p>
       <h3>9. 약관 변경</h3>
       <p>약관을 바꾸면 시행 7일 전에 서비스 안에서 알립니다.</p>
 
       <h3>Terms of Service (English)</h3>
-      <p className="small">You must be 18 or older. Do not post sexual content, hate speech, violence or threats, harassment, scams, spam, or impersonation; anything sexual involving minors means a permanent ban and may be reported to the authorities. No bots or bulk generation. Content may be filtered automatically and reported accounts may be warned, suspended or removed. Twin posts, portraits, translations and introductions are made by AI and can be wrong; do not rely on them for medical, legal or financial decisions. You keep the rights to what you write and let us display, translate and use it in twin conversations. Free features have daily limits (portraits: 2 a day). You can leave and ask us to delete your data at any time: {contact(false)}. The service is provided as is, and to the extent the law allows we are not liable for other users&apos; actions or AI-made content. We announce changes 7 days ahead.</p>
+      <p className="small">You must be 18 or older. Do not post sexual content, hate speech, violence or threats, harassment, scams, spam, or impersonation; anything sexual involving minors means a permanent ban and may be reported to the authorities. No bots or bulk generation. Content may be filtered automatically and reported accounts may be warned, suspended or removed. Twin posts, portraits, translations and introductions are made by AI and can be wrong; do not rely on them for medical, legal or financial decisions. You keep the rights to what you write and let us display, translate and use it in twin conversations. Free features have daily limits (portraits: 2 a day). You can delete your account and all its data at any time with &quot;Delete my account&quot; on your profile page, or ask us at {contact(false)}. The service is provided as is, and to the extent the law allows we are not liable for other users&apos; actions or AI-made content. We announce changes 7 days ahead.</p>
     </div>
   );
 }
@@ -62,9 +62,9 @@ export function PrivacyText() {
         <tbody>{rows.map((r) => <tr key={r[0]} style={{ borderTop: "1px solid var(--line)" }}>{r.map((c) => <td key={c} style={{ padding: "8px 6px", verticalAlign: "top" }}>{c}</td>)}</tr>)}</tbody>
       </table>
       <p>글과 대화는 번역, 분신 대화, 부적절한 내용 확인을 위해 AI 서비스(Anthropic, 설정한 경우 OpenAI 모더레이션)로 보내지며, 이 회사들의 API 약관상 모델 학습에 쓰이지 않습니다. 데이터는 Supabase(데이터베이스)와 Vercel(서버)에 저장되며, 미국 등 해외 서버에 보관될 수 있습니다. 광고 회사에 개인정보를 팔거나 넘기지 않습니다. 만 18세 미만의 정보는 받지 않으며, 확인되면 지웁니다.</p>
-      <p>내 정보를 보거나, 내려받거나, 지우고 싶으면 {contact(true)}으로 알려 주세요. 7일 안에 처리합니다.</p>
+      <p>모든 정보는 내 정보 화면의 &quot;계정 삭제&quot;로 직접 지울 수 있습니다. 내 정보를 보거나 내려받고 싶으면 {contact(true)}으로 알려 주세요. 7일 안에 처리합니다.</p>
       <h3>Privacy Policy (English)</h3>
-      <p className="small">We store your email (and name, if you sign in with Google) to sign you in; the AI answer you paste, to draw your portrait and build your twin (never shown to anyone); the portrait and one sentence, shown on your share card; optional labels, revealed only when both people agree; your messages and posts, for chats, translation, automatic safety checks and handling reports; report and block records; a hashed IP and daily usage counts for free limits and bot protection; and when you confirmed you are 18+ and accepted the terms. Text is sent to Anthropic (and OpenAI moderation, if enabled) and is not used to train their models. Data lives on Supabase and Vercel and may be stored outside your country, including the US. We never sell it. We do not knowingly collect data from anyone under 18. To see, export or delete your data, contact {contact(false)}; we act within 7 days. EU/UK residents may also complain to their data protection authority.</p>
+      <p className="small">We store your email (and name, if you sign in with Google) to sign you in; the AI answer you paste, to draw your portrait and build your twin (never shown to anyone); the portrait and one sentence, shown on your share card; optional labels, revealed only when both people agree; your messages and posts, for chats, translation, automatic safety checks and handling reports; report and block records; a hashed IP and daily usage counts for free limits and bot protection; and when you confirmed you are 18+ and accepted the terms. Text is sent to Anthropic (and OpenAI moderation, if enabled) and is not used to train their models. Data lives on Supabase and Vercel and may be stored outside your country, including the US. We never sell it. We do not knowingly collect data from anyone under 18. You can delete everything yourself with &quot;Delete my account&quot;; to see or export your data, contact {contact(false)}; we act within 7 days. EU/UK residents may also complain to their data protection authority.</p>
     </div>
   );
 }

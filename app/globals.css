@@ -85,3 +85,7 @@ label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute
 .reasons{display:flex;flex-direction:column;gap:6px}
 .reasons label{display:flex;gap:8px;align-items:center;flex-direction:row}
 .reasons input[type=radio]{width:auto}
+.btn.danger{background:#c0392b;color:#fff;border-color:#c0392b}
+.btn.danger:disabled{opacity:.5}
+.link.danger{color:#c0392b;background:none;border:0;padding:0;margin-top:24px;cursor:pointer;text-decoration:underline}
+.error{color:#c0392b}

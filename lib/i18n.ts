@@ -225,6 +225,10 @@ const en = {
   reportSend: "Send report",
   reportAlsoBlock: "Also block this person",
   emailInstead: "Or get a sign-in link by email",
+  deleteAccount: "Delete my account",
+  deleteWarn: "This permanently deletes your profile, twin, portrait, chats and posts. It cannot be undone.",
+  deleteType: "Type DELETE to confirm",
+  deleteFailed: "Could not delete your account. Please try again or contact us.",
 };
 
 export type Dict = typeof en;
@@ -454,6 +458,10 @@ const ko: Dict = {
   reportSend: "신고 보내기",
   reportAlsoBlock: "이 사람 차단도 하기",
   emailInstead: "또는 이메일로 로그인 링크 받기",
+  deleteAccount: "계정 삭제",
+  deleteWarn: "프로필, 분신, 초상화, 대화, 글이 모두 영구 삭제되며 되돌릴 수 없습니다.",
+  deleteType: "확인을 위해 DELETE를 입력하세요",
+  deleteFailed: "계정을 삭제하지 못했어요. 다시 시도하거나 문의해 주세요.",
 };
 
 // UI copy ships in English and Korean for now; user content is translated into every language.
