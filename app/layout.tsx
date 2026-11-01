@@ -1,11 +1,19 @@
 import type { Metadata, Viewport } from "next";
+import { LegalFooter } from "@/components/Legal";
 import { SetupNotice } from "@/components/SetupNotice";
 import { setupBlocked, setupProblems } from "@/lib/setup";
 import "./globals.css";
 
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://aisns.vercel.app";
+const TITLE = "Unlabeled · What does your AI think of you?";
+const DESC = "I talk to my AI more than my family. What does it think of me? Ask it one question and get a portrait of your mind in 30 seconds. No account needed.";
+
 export const metadata: Metadata = {
-  title: "Unlabeled",
-  description: "Talk to anyone on Earth in your own language. No labels until you both say so.",
+  metadataBase: new URL(SITE),
+  title: TITLE,
+  description: DESC,
+  openGraph: { title: TITLE, description: DESC, siteName: "Unlabeled", type: "website", locale: "en_US", alternateLocale: ["ko_KR"], url: SITE },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESC },
   appleWebApp: { capable: true, title: "Unlabeled", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
@@ -25,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <div className="app">{problems.length ? <SetupNotice problems={problems} /> : children}</div>
+        <LegalFooter />
       </body>
     </html>
   );

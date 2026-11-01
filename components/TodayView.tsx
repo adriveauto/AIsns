@@ -19,6 +19,9 @@ export function TodayView({
   aiDay,
   answers,
   chatWith,
+  hasTwin,
+  guess: initialGuess,
+  knows: initialKnows,
 }: {
   me: Profile;
   day: string;
@@ -26,6 +29,9 @@ export function TodayView({
   aiDay?: boolean;
   answers: AnswerRow[];
   chatWith: Record<string, string>;
+  hasTwin?: boolean;
+  guess?: { guess: string; verdict: string | null } | null;
+  knows?: { pct: number; days: number } | null;
 }) {
   const t = dict(me.lang);
   const router = useRouter();
@@ -36,6 +42,49 @@ export function TodayView({
   const [text, setText] = useState(mine?.body ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [guess, setGuess] = useState(initialGuess?.guess ?? "");
+  const [verdict, setVerdict] = useState(initialGuess?.verdict ?? null);
+  const [knows, setKnows] = useState(initialKnows ?? null);
+  const [guessing, setGuessing] = useState(false);
+
+  // The twin guesses today's answer before the owner writes anything.
+  useEffect(() => {
+    if (!hasTwin || guess || mine) return;
+    setGuessing(true);
+    fetch("/api/today/guess", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "guess" }) })
+      .then((r) => r.json())
+      .then((d) => d.guess && setGuess(d.guess))
+      .catch(() => {})
+      .finally(() => setGuessing(false));
+  }, [hasTwin, guess, mine]);
+
+  // Share today's question with a friend; the link carries the portrait code so they land as our invitee.
+  async function shareGuess() {
+    const r = await fetch("/api/share", { method: "POST" }).catch(() => null);
+    const code = r && r.ok ? (await r.json()).code : null;
+    const url = `${window.location.origin}/q${code ? `?ref=${code}` : ""}`;
+    const text = t.shareGuessText(knows ? knows.pct : null);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Unlabeled", text, url });
+      } catch {}
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setErr(t.copied);
+    } catch {}
+  }
+
+  async function mark(v: "right" | "close" | "wrong") {
+    setVerdict(v);
+    if (v === "wrong") setText("");
+    else setText(guess);
+    if (v !== "right") document.getElementById("answer")?.focus();
+    const r = await fetch("/api/today/guess", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "mark", verdict: v }) });
+    const d = await r.json().catch(() => null);
+    if (d?.knows) setKnows(d.knows);
+  }
 
   // Pick up new answers from around the world while the page is open.
   useEffect(() => {
@@ -79,6 +128,31 @@ export function TodayView({
         <p className="eyebrow">{aiDay ? t.aiSunday : t.questionOfDay} · {day}</p>
         <h2 dir="auto">{q ?? question}</h2>
       </div>
+      {hasTwin && !mine && (guessing || guess) && (
+        <div className="card guess">
+          <p className="eyebrow">{t.twinGuessTitle}</p>
+          {guessing && !guess ? (
+            <p className="muted">{t.twinGuessing}</p>
+          ) : (
+            <>
+              <p className="guess-text" dir="auto">“{guess}”</p>
+              {verdict ? (
+                <div className="row">
+                  <p className="small muted grow">{t.twinGuessThanks[verdict as "right" | "close" | "wrong"]}</p>
+                  <button type="button" className="btn tag" onClick={shareGuess}>{t.shareGuess}</button>
+                </div>
+              ) : (
+                <div className="row">
+                  <button type="button" className="btn" onClick={() => mark("right")}>{t.guessRight}</button>
+                  <button type="button" className="btn ghost" onClick={() => mark("close")}>{t.guessClose}</button>
+                  <button type="button" className="btn ghost" onClick={() => mark("wrong")}>{t.guessWrong}</button>
+                </div>
+              )}
+            </>
+          )}
+          {knows && <p className="small muted">{knows.pct < 0 ? t.knowsYouSoon(3 - knows.days) : t.knowsYou(knows.pct, knows.days)}</p>}
+        </div>
+      )}
       <form className="card" onSubmit={post}>
         <label htmlFor="answer">{t.answerIn(langName(me.lang))}</label>
         <textarea id="answer" dir="auto" maxLength={600} required value={text} onChange={(e) => setText(e.target.value)} />

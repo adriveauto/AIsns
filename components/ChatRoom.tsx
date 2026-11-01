@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Alert, Modal } from "@/components/Modal";
 import { Translated, translate } from "@/components/Translated";
 import { dict } from "@/lib/i18n";
 import { LANGS, type Lang } from "@/lib/langs";
@@ -43,6 +44,13 @@ export function ChatRoom({
   const [err, setErr] = useState("");
   const [theirLabels, setTheirLabels] = useState<string[]>([]);
   const end = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState(false);
+  const [popup, setPopup] = useState("");
+  const [confirmBlock, setConfirmBlock] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [detail, setDetail] = useState("");
+  const [alsoBlock, setAlsoBlock] = useState(true);
 
   useEffect(() => {
     const ch = supabase
@@ -82,13 +90,12 @@ export function ChatRoom({
     const body = text.trim();
     if (!body) return;
     setText("");
-    const { data, error } = await supabase
-      .from("messages")
-      .insert({ chat_id: chatId, sender: me.id, lang: me.lang, body })
-      .select("id, sender, lang, body, created_at")
-      .single();
-    if (error || !data) {
+    // Sent through the server, which checks the message before anyone can see it.
+    const r = await fetch("/api/messages", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: chatId, body, lang: me.lang }) });
+    const data = (await r.json().catch(() => null)) as (Msg & { error?: string }) | null;
+    if (!r.ok || !data?.id) {
       setText(body);
+      if (data?.error === "blocked") return setPopup(t.blockedContent);
       return setErr(t.error);
     }
     setMsgs((prev) => (prev.some((x) => x.id === data.id) ? prev : [...prev, data]));
@@ -101,16 +108,44 @@ export function ChatRoom({
     if (data) setReveals(data);
   }
 
+  // Blocking hides this chat from my list right away, and the database refuses any new chat
+  // or message between us from then on.
   async function block() {
-    await supabase.from("blocks").insert({ blocker: me.id, blocked: otherId });
+    await supabase.from("blocks").upsert({ blocker: me.id, blocked: otherId }, { onConflict: "blocker,blocked", ignoreDuplicates: true });
     router.push("/chats");
+    router.refresh();
   }
 
-  async function report() {
-    const reason = window.prompt(t.reportPrompt);
+  async function report(e: React.FormEvent) {
+    e.preventDefault();
     if (!reason) return;
-    const { error } = await supabase.from("reports").insert({ reporter: me.id, reported: otherId, chat_id: chatId, reason });
-    setErr(error ? t.error : t.reported);
+    const label = t.reportReasons.find(([k]) => k === reason)?.[1] ?? reason;
+    const text = `${reason}: ${label}${detail.trim() ? ` | ${detail.trim()}` : ""}`.slice(0, 500);
+    let { error } = await supabase.from("reports").insert({ reporter: me.id, reported: otherId, chat_id: chatId, reason: text, category: reason });
+    // Before migration 0012 there is no category column; the reason text still carries it.
+    if (error) ({ error } = await supabase.from("reports").insert({ reporter: me.id, reported: otherId, chat_id: chatId, reason: text }));
+    setReporting(false);
+    setReason("");
+    setDetail("");
+    if (error) return setErr(t.error);
+    if (alsoBlock) return block();
+    setPopup(t.reported);
+  }
+
+  // Share the reveal picture itself (KakaoTalk, Instagram, X…) where the phone allows it; otherwise save it.
+  async function shareCard() {
+    const blob = await drawRevealCard({ alias: otherAlias, labels: theirLabels, messages: msgs.length, days: Math.max(1, days) });
+    const file = new File([blob], "unlabeled-reveal.png", { type: "image/png" });
+    const data = { files: [file], text: t.revealShareText, url: window.location.origin };
+    if (navigator.canShare?.(data)) {
+      try {
+        await navigator.share(data);
+      } catch {
+        /* dismissed */
+      }
+      return;
+    }
+    saveCard();
   }
 
   async function saveCard() {
@@ -131,9 +166,46 @@ export function ChatRoom({
     <main>
       <div className="row">
         <h2 className="grow">{otherAlias}</h2>
-        <button type="button" className="link" onClick={report}>{t.report}</button>
-        <button type="button" className="link" onClick={block}>{t.block}</button>
+        <div className="menu-wrap">
+          <button type="button" className="btn ghost" aria-haspopup="menu" aria-expanded={menu} aria-label={t.more} onClick={() => setMenu((v) => !v)}>⋯</button>
+          {menu && (
+            <div className="menu card" role="menu">
+              <button type="button" role="menuitem" onClick={() => { setMenu(false); setReporting(true); }}>🚩 {t.report}</button>
+              <button type="button" role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirmBlock(true); }}>⛔ {t.block}</button>
+            </div>
+          )}
+        </div>
       </div>
+      {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
+      {confirmBlock && (
+        <Modal title={t.block} onClose={() => setConfirmBlock(false)} closeLabel={t.close}>
+          <p dir="auto">{t.blockConfirm(otherAlias)}</p>
+          <div className="row">
+            <button type="button" className="btn" onClick={block}>{t.block}</button>
+            <button type="button" className="btn ghost" onClick={() => setConfirmBlock(false)}>{t.cancel}</button>
+          </div>
+        </Modal>
+      )}
+      {reporting && (
+        <Modal title={t.reportTitle} onClose={() => setReporting(false)} closeLabel={t.close}>
+          <form onSubmit={report} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="reasons" role="radiogroup">
+              {t.reportReasons.map(([k, label]) => (
+                <label key={k}>
+                  <input type="radio" name="reason" value={k} checked={reason === k} onChange={() => setReason(k)} />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+            <textarea rows={3} maxLength={400} dir="auto" placeholder={t.reportDetail} value={detail} onChange={(e) => setDetail(e.target.value)} />
+            <label className="small" style={{ display: "flex", gap: 8, alignItems: "center", flexDirection: "row" }}>
+              <input type="checkbox" checked={alsoBlock} onChange={(e) => setAlsoBlock(e.target.checked)} style={{ width: "auto" }} />
+              <span>{t.reportAlsoBlock}</span>
+            </label>
+            <div><button type="submit" className="btn" disabled={!reason}>{t.reportSend}</button></div>
+          </form>
+        </Modal>
+      )}
 
       {mine && theirs ? (
         <section className="reveal">
@@ -142,8 +214,10 @@ export function ChatRoom({
           <div className="row">
             {theirLabels.map((l) => <span key={l} className="label">{l}</span>)}
           </div>
+          <p className="small">{t.revealSharePrompt}</p>
           <div className="row">
-            <button type="button" className="btn tag" onClick={saveCard}>{t.saveCard}</button>
+            <button type="button" className="btn tag" onClick={shareCard}>{t.revealShare}</button>
+            <button type="button" className="btn ghost" onClick={saveCard}>{t.saveCard}</button>
           </div>
         </section>
       ) : (
