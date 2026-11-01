@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { asNeeds, extractNeeds, findHelpers } from "@/lib/match";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { allowUser } from "@/lib/usage";
+import { allowUser, isSuspended } from "@/lib/usage";
 
 // Twin introductions: turn on or off, correct what the twin understood, or search now.
 export async function POST(req: Request) {
@@ -10,6 +10,7 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "sign in required" }, { status: 401 });
+  if (await isSuspended(user.id)) return NextResponse.json({ error: "suspended" }, { status: 403 });
   const b = (await req.json().catch(() => null)) as { action?: string; needs?: unknown } | null;
   const db = createServiceClient();
   const { data: priv } = await db.from("twin_private").select("interests, work, style, bounds, ai_answer, needs").eq("owner", user.id).maybeSingle();

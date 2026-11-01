@@ -5,7 +5,7 @@ import { isInappropriate } from "@/lib/moderate";
 import { cardForOwner } from "@/lib/cards";
 import { extractNeeds } from "@/lib/match";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { allowIp, allowUser } from "@/lib/usage";
+import { allowIp, allowUser, isSuspended } from "@/lib/usage";
 import { createPersona, drawPortrait, runVisit, type TwinPrivate } from "@/lib/twin";
 
 // Create or rebuild the signed-in person's twin.
@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "sign in required" }, { status: 401 });
+  if (await isSuspended(user.id)) return NextResponse.json({ error: "suspended" }, { status: 403 });
   const { data: profile } = await supabase.from("profiles").select("lang").eq("id", user.id).single();
   if (!profile) return NextResponse.json({ error: "finish onboarding first" }, { status: 400 });
 

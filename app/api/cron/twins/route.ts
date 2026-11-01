@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findHelpers } from "@/lib/match";
 import { runVisit } from "@/lib/twin";
+import { aiPaused } from "@/lib/usage";
 
 const BATCH = 25;
 
@@ -12,6 +13,7 @@ export async function GET(req: Request) {
   if (!secret || secret.length < 16 || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  if (aiPaused()) return NextResponse.json({ paused: true });
   const db = createServiceClient();
   // Answers pasted before signing up are kept 7 days at most; the card itself stays shareable.
   const week = new Date(Date.now() - 7 * 86400e3).toISOString();

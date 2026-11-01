@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isLang } from "@/lib/langs";
 import { isInappropriate } from "@/lib/moderate";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { isSuspended } from "@/lib/usage";
 
 // Every chat message goes through here: it is checked for sexual content, hate and violence
 // before it is saved. Browsers can no longer insert messages directly (migration 0012).
@@ -11,6 +12,7 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "sign in required" }, { status: 401 });
+  if (await isSuspended(user.id)) return NextResponse.json({ error: "suspended" }, { status: 403 });
   const b = (await req.json().catch(() => null)) as { chat_id?: string; body?: string; lang?: string } | null;
   const body = String(b?.body ?? "").trim().slice(0, 800);
   const chatId = String(b?.chat_id ?? "");

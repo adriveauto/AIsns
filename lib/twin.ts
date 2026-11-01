@@ -2,7 +2,7 @@ import "server-only";
 import { FIRST_ROAD, isMood } from "./firstRoad";
 import { LANGS, isLang } from "./langs";
 import { createServiceClient } from "./supabase/server";
-import { OverBudget, allowGlobal } from "./usage";
+import { OverBudget, allowGlobal, isSuspended } from "./usage";
 
 export const VISITS_PER_DAY = 3;
 // Bringing in friends earns the twin more trips to the square.
@@ -102,6 +102,7 @@ type VisitResult = {
 
 // One trip to the square for one twin. Runs on the server only.
 export async function runVisit(owner: string) {
+  if (await isSuspended(owner)) return { skipped: "suspended" as const };
   const db = createServiceClient();
   const since = new Date(Date.now() - 864e5).toISOString();
   const { count } = await db.from("twin_diary").select("id", { count: "exact", head: true }).eq("owner", owner).gte("created_at", since);
