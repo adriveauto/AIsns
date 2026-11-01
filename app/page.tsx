@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { IconCheck, IconGlobe, IconLock, IconTag, LogoMark } from "@/components/Icons";
 import { SignIn } from "@/components/SignIn";
-import { PublicHeader, SiteFooter } from "@/components/SiteChrome";
+import { PublicHeader } from "@/components/SiteChrome";
 import { TryPortrait } from "@/components/TryPortrait";
 import { dict } from "@/lib/i18n";
 import { guessLang } from "@/lib/langs";
@@ -18,6 +18,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ r
   } = await supabase.auth.getUser();
   if (user) redirect("/twin");
   const lang = guessLang((await headers()).get("accept-language"));
+  const { data: statRows } = await supabase.rpc("square_stats");
+  const stats = (Array.isArray(statRows) ? statRows[0] : statRows) as { twins: number; langs: number } | null;
   const t = dict(lang);
   const steps = [
     [t.how1T, t.how1],
@@ -45,6 +47,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ r
               </h1>
               <p className="lead">{t.tryLead}</p>
               <p className="proof"><IconCheck />{t.heroProof}</p>
+              {stats && stats.twins >= 20 && <p className="proof"><span className="live-dot" />{t.squareNow(stats.twins, stats.langs)}</p>}
               {failed && <p className="notice err" role="alert">{t.loginFailed}</p>}
               <details id="signin" open={failed || sp.signin === "1"}>
                 <summary>{t.haveAccount}</summary>
@@ -110,7 +113,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ r
           </div>
         </section>
       </main>
-      <SiteFooter t={t} />
     </>
   );
 }

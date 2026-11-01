@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LogoMark } from "@/components/Icons";
+import { CompareButton } from "@/components/CompareButton";
 import { ShareButtons } from "@/components/ShareButtons";
-import { PublicHeader, SiteFooter } from "@/components/SiteChrome";
+import { PublicHeader } from "@/components/SiteChrome";
 import { getCard } from "@/lib/cards";
 import { dict } from "@/lib/i18n";
 import { guessLang } from "@/lib/langs";
@@ -47,11 +47,10 @@ export default async function CardPage({ params }: Props) {
         <div className="card" style={{ padding: 24, gap: 14, textAlign: "center", alignItems: "center" }}>
           <h2 className="serif" style={{ fontWeight: 400, fontSize: 32, lineHeight: 1.1 }}>{t.cardOgCta}</h2>
           <p className="muted">{t.tryPitch}</p>
-          <Link href={`/?ref=${card.code}#try`} className="btn lg block">{t.makeMine}</Link>
+          <CompareButton code={card.code} label={t.compareWithMine} busyLabel={t.comparing} lang={lang} />
         </div>
         <ShareButtons code={card.code} lang={lang} />
       </main>
-      <SiteFooter t={t} />
     </>
   );
 }

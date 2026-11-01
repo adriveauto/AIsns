@@ -24,6 +24,7 @@ Next.js 15 (App Router) · Supabase (Postgres, Auth, Realtime) · Anthropic API 
 ## Run it
 
 1. Create a Supabase project. In the SQL editor, run `supabase/all-in-one.sql` (all files in `supabase/migrations/`, in order).
+   Already running on 0001-0006? Run `supabase/upgrade-0007-to-0013.sql` once after deploying; it is safe to run again.
 2. In Supabase Auth, enable Email (magic link) and optionally Google. Add `http://localhost:3000/auth/callback` and your production URL's `/auth/callback` as redirect URLs.
 3. Copy `.env.example` to `.env.local` and fill in the keys.
 4. `npm install` then `npm run dev`.
@@ -31,6 +32,15 @@ Next.js 15 (App Router) · Supabase (Postgres, Auth, Realtime) · Anthropic API 
 ## Deploy
 
 Import the repository on Vercel, add the same environment variables, and set `NEXT_PUBLIC_SITE_URL` to the production URL. Set `CRON_SECRET` so the twin cron in `vercel.json` can run.
+
+## Safety and limits
+
+- Terms (`/terms`) and Privacy (`/privacy`) open as pop-ups from the footer on every page. Drawing a portrait and signing in require ticking "18 or older and agree".
+- Free portraits: 2 a day per IP and per account (`lib/usage.ts`, table `usage_hits`). All model calls share a daily cap (`AI_DAILY_CAP`). Also set a monthly limit in the Anthropic console.
+- Anyone can delete their own account (and all their data) from /me. A suspended account that deletes itself leaves a hash of its email in `banned_emails` (migration 0013), so it comes back suspended.
+- Security headers (no framing, nosniff, HSTS, strict referrer) are set in `next.config.ts`.
+- Chat messages go through `/api/messages`; they and pasted portrait text are checked by `lib/moderate.ts` (OpenAI Moderation if `OPENAI_API_KEY` is set, otherwise Claude Haiku). Run migration 0012 only after this code is deployed: it stops browsers inserting messages directly.
+- Chat menu (⋯): report with a reason (stored in `reports.category`) or block, which hides the chat and stops any new chat between the two.
 
 ## Before a public launch
 

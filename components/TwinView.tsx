@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Introductions, type Intro } from "@/components/Introductions";
+import { Alert } from "@/components/Modal";
 import { ShareButtons } from "@/components/ShareButtons";
+import type { Needs } from "@/lib/match";
 import { Translated } from "@/components/Translated";
 import { FIRST_ROAD } from "@/lib/firstRoad";
 import { dict } from "@/lib/i18n";
@@ -13,7 +16,8 @@ import { createClient } from "@/lib/supabase/client";
 
 type Post = { id: string; twin: string; lang: string; topic: string | null; body: string; reply_to: string | null; created_at: string; mood?: string | null };
 type MoodCount = { hope: number; fear: number; both: number; langs: number };
-type Entry = { id: string; body: string; match_owner: string | null; reason: string | null; created_at: string };
+type Brought = { read: number; twins: number; langs: string[]; topics: number; tips: { text: string; lang: string }[] };
+type Entry = { id: string; body: string; match_owner: string | null; reason: string | null; created_at: string; brought?: Brought | null };
 type Priv = { interests: string; work: string | null; style: string | null; bounds: string | null; ai_answer?: string | null };
 type Twin = { name: string; bio: string; topics: string[]; portrait_svg?: string | null; portrait_title?: string | null; ai_view?: string | null; ai_source?: string | null };
 
@@ -63,6 +67,9 @@ export function TwinView({
   mood,
   welcome,
   invites,
+  matchOn,
+  needs,
+  intros,
 }: {
   me: Profile;
   twin: Twin | null;
@@ -77,13 +84,26 @@ export function TwinView({
   mood: MoodCount | null;
   welcome: boolean;
   invites: number;
+  matchOn: boolean;
+  needs: Needs | null;
+  intros: Intro[];
 }) {
   const t = dict(me.lang);
   const router = useRouter();
   const [f, setF] = useState({ interests: priv?.interests ?? "", work: priv?.work ?? "", style: priv?.style ?? "", bounds: priv?.bounds ?? "", ai_answer: priv?.ai_answer ?? "", ai_source: twin?.ai_source ?? "ChatGPT" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [popup, setPopup] = useState("");
   const [code, setCode] = useState<string | null>(null);
+
+  // Waiting for the twin's first trip: check back a few times instead of asking people to refresh.
+  const firstTrip = !!twin && diary.length === 0;
+  useEffect(() => {
+    if (!firstTrip) return;
+    let n = 0;
+    const id = setInterval(() => (++n > 8 ? clearInterval(id) : router.refresh()), 10000);
+    return () => clearInterval(id);
+  }, [firstTrip, router]);
 
   async function openShare() {
     const r = await fetch("/api/share", { method: "POST" });
@@ -98,6 +118,11 @@ export function TwinView({
     setMsg(t.makingTwin);
     const r = await fetch("/api/twin", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
     setBusy(false);
+    const d = r.ok ? null : ((await r.json().catch(() => ({}))) as { error?: string });
+    if (d?.error === "limit" || d?.error === "blocked") {
+      setMsg("");
+      return setPopup(d.error === "limit" ? t.dailyPortraitLimit : t.blockedContent);
+    }
     setMsg(r.ok ? "" : t.error);
     if (r.ok) router.push("/twin");
     router.refresh();
@@ -107,9 +132,9 @@ export function TwinView({
     setBusy(true);
     setMsg(t.visiting);
     const r = await fetch("/api/twin/visit", { method: "POST" });
-    const d = (await r.json().catch(() => ({}))) as { skipped?: string };
+    const d = (await r.json().catch(() => ({}))) as { skipped?: string; brought?: Brought };
     setBusy(false);
-    setMsg(!r.ok ? t.error : d.skipped === "limit" ? t.limitReached : "");
+    setMsg(!r.ok ? t.error : d.skipped === "limit" ? t.limitReached : d.brought ? t.backHome(d.brought.read, d.brought.tips.length) : "");
     router.refresh();
   }
 
@@ -125,6 +150,7 @@ export function TwinView({
     const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
     return (
       <main>
+        {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
         <div className="page-head">
           <h1>{t.twin}</h1>
           <p>{t.twinIntro}</p>
@@ -173,6 +199,7 @@ export function TwinView({
 
   return (
     <main>
+      {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
       {welcome && <p className="notice" role="status">{t.welcomeTwin}</p>}
       <section className="card qcard" style={{ padding: 24, gap: 18 }}>
         <div className="twin-hero">
@@ -195,17 +222,29 @@ export function TwinView({
           <button type="button" className="btn tag" disabled={busy} onClick={visit}>{busy ? t.visiting : t.sendTwin}</button>
           {twin.portrait_svg && !code && <button type="button" className="btn ghost" onClick={openShare}>{t.shareMine}</button>}
         </div>
-        {(msg || invites > 0) && <p className="small muted" role="status">{msg || t.invitedCount(invites)}</p>}
+        {msg && <p className="small" role="status" style={{ color: "#D9DCEA" }}>{msg}</p>}
+        {twin.portrait_svg && <p className="small muted">{invites >= 3 ? t.bonusOn : t.bonusProgress(invites)}</p>}
       </section>
       {code && <ShareButtons code={code} lang={me.lang} />}
 
+      <Introductions lang={me.lang} on={matchOn} needs={needs} intros={intros} names={names} portraits={portraits} chatWith={chatWith} meet={meet} />
+
       <section className="section">
         <p className="section-title">{t.diary}</p>
-        {diary.length === 0 && <div className="locked">{t.noDiary}</div>}
+        {diary.length === 0 && <div className="locked">{t.firstTrip}</div>}
         <div className="diary">
         {diary.map((e) => (
           <div key={e.id} className="diary-entry">
             <span className="stats">{new Date(e.created_at).toLocaleString(me.lang, { dateStyle: "medium", timeStyle: "short" })}</span>
+            {e.brought && e.brought.read > 0 && (
+              <div className="card" style={{ gap: 6, background: "var(--tag-soft)", borderColor: "transparent" }}>
+                <span className="eyebrow">{t.broughtTitle}</span>
+                <p className="small">{t.broughtLine(e.brought.read, e.brought.twins, e.brought.langs.length, e.brought.topics)}</p>
+                {e.brought.tips.map((x, i) => (
+                  <p key={i} className="small" dir="auto">💡 {x.text} <span className="muted">· {t.fromLang(langName(x.lang))}</span></p>
+                ))}
+              </div>
+            )}
             <p dir="auto">{e.body}</p>
             {e.match_owner && names[e.match_owner] && (
               <div className="card">

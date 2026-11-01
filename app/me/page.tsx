@@ -1,4 +1,5 @@
 import { Nav, PageHead } from "@/components/Nav";
+import { DeleteAccount } from "@/components/DeleteAccount";
 import { ProfileForm } from "@/components/ProfileForm";
 import { SignOut } from "@/components/SignOut";
 import { dict } from "@/lib/i18n";
@@ -19,6 +20,9 @@ export default async function Me() {
           labels={{ country: labels?.country ?? "", age: labels?.age ?? "", job: labels?.job ?? "" }}
         />
         <SignOut label={t.signOut} />
+        <div>
+          <DeleteAccount t={{ deleteAccount: t.deleteAccount, deleteWarn: t.deleteWarn, deleteType: t.deleteType, deleteFailed: t.deleteFailed, cancel: t.cancel }} />
+        </div>
       </main>
     </>
   );

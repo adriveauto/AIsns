@@ -2,6 +2,7 @@ import { Nav } from "@/components/Nav";
 import { TodayView, type AnswerRow } from "@/components/TodayView";
 import { dict } from "@/lib/i18n";
 import { isAiDay, questionFor, todayUtc } from "@/lib/questions";
+import { knowsYou } from "@/lib/guess";
 import { requireProfile } from "@/lib/session";
 
 export default async function Today() {
@@ -16,6 +17,13 @@ export default async function Today() {
     .eq("day", day)
     .order("created_at", { ascending: false })
     .limit(200);
+
+  // The twin's guess for today, if the owner has a twin. Guesses are made lazily from the page.
+  const [{ data: twin }, { data: guessRow }] = await Promise.all([
+    supabase.from("twins").select("owner").eq("owner", profile.id).maybeSingle(),
+    supabase.from("twin_guesses").select("guess, verdict").eq("owner", profile.id).eq("day", day).maybeSingle(),
+  ]);
+  const knows = twin ? await knowsYou(profile.id) : null;
 
   const { data: chats } = await supabase.from("chats").select("id, user_a, user_b");
   const chatWith: Record<string, string> = {};
@@ -39,6 +47,9 @@ export default async function Today() {
         aiDay={isAiDay(day)}
         answers={rows}
         chatWith={chatWith}
+        hasTwin={!!twin}
+        guess={guessRow ?? null}
+        knows={knows}
       />
     </>
   );

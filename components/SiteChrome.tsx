@@ -19,19 +19,3 @@ export function PublicHeader({ t, cta = true }: { t: Dict; cta?: boolean }) {
     </header>
   );
 }
-
-export function SiteFooter({ t }: { t: Dict }) {
-  return (
-    <footer className="site-footer">
-      <div className="wrap">
-        <span className="logo" style={{ fontSize: 14 }}><LogoMark /> Unlabeled</span>
-        <span>{t.footerLine}</span>
-        <nav>
-          <Link href="/about">{t.aboutLink}</Link>
-          <Link href="/privacy">{t.privacyLink}</Link>
-          <Link href="/recipes">{t.recipesTitle}</Link>
-        </nav>
-      </div>
-    </footer>
-  );
-}

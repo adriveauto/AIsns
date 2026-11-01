@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { setupBlocked } from "@/lib/setup";
 
-const PUBLIC_PATHS = ["/", "/auth/callback", "/auth/confirm", "/manifest.webmanifest", "/icon.svg", "/about", "/privacy", "/opengraph-image"];
+const PUBLIC_PATHS = ["/", "/auth/callback", "/auth/confirm", "/manifest.webmanifest", "/icon.svg", "/about", "/privacy", "/terms", "/opengraph-image", "/world", "/world/opengraph-image", "/q", "/q/opengraph-image"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   }
-  const isPublic = PUBLIC_PATHS.includes(path) || path.startsWith("/api") || path === "/recipes" || path.startsWith("/p/") || /^\/recipes\/[0-9a-f-]{36}$/.test(path);
+  const isPublic = PUBLIC_PATHS.includes(path) || path.startsWith("/api") || path === "/recipes" || path.startsWith("/p/") || path.startsWith("/c/") || /^\/recipes\/[0-9a-f-]{36}$/.test(path);
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

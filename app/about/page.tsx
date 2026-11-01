@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { PublicHeader, SiteFooter } from "@/components/SiteChrome";
+import { PublicHeader } from "@/components/SiteChrome";
 import { dict } from "@/lib/i18n";
 import { guessLang } from "@/lib/langs";
 
@@ -22,7 +22,6 @@ export default async function About() {
       {CONTACT && <p className="small">문의 · Contact: <a className="link" href={`mailto:${CONTACT}`}>{CONTACT}</a></p>}
       <Link href="/" className="link">← Unlabeled</Link>
     </main>
-    <SiteFooter t={t} />
     </>
   );
 }
