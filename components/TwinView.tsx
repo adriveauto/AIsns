@@ -28,7 +28,7 @@ const MOOD_ICON: Record<string, string> = { hope: "☀", fear: "☾", both: "◐
 function MoodMeter({ m, t }: { m: MoodCount; t: ReturnType<typeof dict> }) {
   const total = m.hope + m.fear + m.both;
   const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
-  const bars: [string, number, string][] = [["hope", m.hope, "var(--tag)"], ["both", m.both, "var(--line)"], ["fear", m.fear, "var(--ink)"]];
+  const bars: [string, number, string][] = [["hope", m.hope, "var(--tag)"], ["both", m.both, "#8C93B8"], ["fear", m.fear, "#3E4680"]];
   return (
     <section className="card qcard" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <p className="eyebrow">{t.firstRoad}</p>
@@ -36,7 +36,7 @@ function MoodMeter({ m, t }: { m: MoodCount; t: ReturnType<typeof dict> }) {
       <p className="small" dir="auto">{t.firstRoadIntro}</p>
       {total > 0 ? (
         <>
-          <div role="img" aria-label={bars.map(([k, n]) => `${t.moodName(k)} ${pct(n)}%`).join(", ")} style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", border: "1px solid var(--line)" }}>
+          <div role="img" aria-label={bars.map(([k, n]) => `${t.moodName(k)} ${pct(n)}%`).join(", ")} style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", border: "1px solid rgba(255,255,255,.15)" }}>
             {bars.map(([k, n, c]) => n > 0 && <div key={k} style={{ width: `${pct(n)}%`, background: c }} />)}
           </div>
           <div className="row small">
@@ -151,12 +151,15 @@ export function TwinView({
     return (
       <main>
         {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
-        <p className="muted">{t.twinIntro}</p>
-        <form className="card" onSubmit={make}>
-          <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <p>{t.portraitHow}</p>
-            <p dir="auto" style={{ color: "var(--ink)" }}>{t.portraitQuestion}</p>
-            <div><button type="button" className="btn ghost" onClick={() => navigator.clipboard.writeText(t.portraitQuestion).catch(() => {})}>{t.copy}</button></div>
+        <div className="page-head">
+          <h1>{t.twin}</h1>
+          <p>{t.twinIntro}</p>
+        </div>
+        <form className="card" onSubmit={make} style={{ padding: 24, gap: 16 }}>
+          <p className="small muted">{t.portraitHow}</p>
+          <div className="question">
+            <p dir="auto">{t.portraitQuestion}</p>
+            <button type="button" className="btn tag" onClick={() => navigator.clipboard.writeText(t.portraitQuestion).catch(() => {})}>{t.copy}</button>
           </div>
           <label htmlFor="tw-src">{t.whichAi}
             <select id="tw-src" value={f.ai_source} onChange={set("ai_source")}>
@@ -173,7 +176,7 @@ export function TwinView({
               <label htmlFor="tw-b">{t.twinBounds}<input id="tw-b" maxLength={200} dir="auto" value={f.bounds} onChange={set("bounds")} /></label>
             </div>
           </details>
-          <button className="btn" type="submit" disabled={busy || (!f.ai_answer.trim() && !f.interests.trim())}>{busy ? t.makingTwin : t.makeTwin}</button>
+          <button className="btn lg block" type="submit" disabled={busy || (!f.ai_answer.trim() && !f.interests.trim())}>{busy ? t.makingTwin : t.makeTwin}</button>
           {msg && <p className="small muted" role="status">{msg}</p>}
         </form>
       </main>
@@ -183,9 +186,9 @@ export function TwinView({
   const roots = square.filter((p) => !p.reply_to);
   const repliesOf = (id: string) => square.filter((p) => p.reply_to === id).reverse();
   const postCard = (p: Post, reply: boolean) => (
-    <article key={p.id} className="card" style={reply ? { marginLeft: 22, borderStyle: "dashed" } : undefined}>
-      <div className="row">
-        {portraits[p.twin] && <img src={svgSrc(portraits[p.twin])} alt="" width={28} height={28} style={{ borderRadius: 8 }} />}
+    <article key={p.id} className={reply ? "card reply" : "card"}>
+      <div className="post-head">
+        {portraits[p.twin] ? <img src={svgSrc(portraits[p.twin])} alt="" width={32} height={32} /> : <span className="avatar">{(names[p.twin] ?? "?").slice(0, 1)}</span>}
         <span className="alias grow">{names[p.twin] ?? "—"}{p.twin === me.id ? ` (${t.myTwin})` : ""}</span>
         {p.mood && <span className="chip" title={t.moodName(p.mood)}>{MOOD_ICON[p.mood] ?? ""} {t.moodName(p.mood)}</span>}
         {!reply && p.topic && <span className="chip">#{p.topic === FIRST_ROAD ? t.firstRoad : p.topic}</span>}
@@ -198,45 +201,43 @@ export function TwinView({
     <main>
       {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
       {welcome && <p className="notice" role="status">{t.welcomeTwin}</p>}
-      <section className="card qcard">
-        <p className="eyebrow">{t.myTwin}</p>
-        <div className="row" style={{ alignItems: "flex-start", gap: 16 }}>
-          {twin.portrait_svg && <img src={svgSrc(twin.portrait_svg)} alt={twin.portrait_title ?? twin.name} width={120} height={120} style={{ borderRadius: 24 }} />}
-          <div className="grow" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <h2 dir="auto">{twin.name}</h2>
-            {twin.portrait_title && <p className="small" style={{ opacity: 0.75 }}>{twin.portrait_title}</p>}
-            <p dir="auto">{twin.bio}</p>
+      <section className="card qcard" style={{ padding: 24, gap: 18 }}>
+        <div className="twin-hero">
+          {twin.portrait_svg && <img src={svgSrc(twin.portrait_svg)} alt={twin.portrait_title ?? twin.name} width={132} height={132} />}
+          <div className="stack" style={{ gap: 8 }}>
+            <p className="eyebrow">{t.myTwin}</p>
+            <h2 dir="auto" style={{ fontSize: 26 }}>{twin.name}</h2>
+            {twin.portrait_title && <p className="small muted">{twin.portrait_title}</p>}
+            <p dir="auto" style={{ color: "#D9DCEA" }}>{twin.bio}</p>
           </div>
         </div>
         {twin.ai_view && (
-          <>
-            <p dir="auto" style={{ fontFamily: "var(--f-display)", fontSize: 16 }}>“{twin.ai_view}”</p>
-            <p className="small" style={{ opacity: 0.7 }}>{t.seesMe(twin.ai_source ?? "AI")}</p>
-          </>
+          <div className="stack" style={{ gap: 6, borderTop: "1px solid rgba(255,255,255,.12)", paddingTop: 16 }}>
+            <p className="quote" dir="auto" style={{ color: "#fff" }}>“{twin.ai_view}”</p>
+            <p className="small muted">{t.seesMe(twin.ai_source ?? "AI")}</p>
+          </div>
         )}
-        <div className="row">{twin.topics.map((x) => <span key={x} className="chip" style={{ color: "inherit" }}>#{x}</span>)}</div>
-      </section>
-      <div className="row">
-        <button type="button" className="btn tag" disabled={busy} onClick={visit}>{busy ? t.visiting : t.sendTwin}</button>
-        <span className="small muted grow" role="status">{msg}</span>
-      </div>
-      {twin.portrait_svg && (code ? <ShareButtons code={code} lang={me.lang} /> : (
-        <div className="row">
-          <button type="button" className="btn ghost" onClick={openShare}>{t.shareMine}</button>
-          <span className="small muted">{invites >= 3 ? t.bonusOn : t.bonusProgress(invites)}</span>
+        {twin.topics.length > 0 && <div className="row">{twin.topics.map((x) => <span key={x} className="chip">#{x}</span>)}</div>}
+        <div className="actions">
+          <button type="button" className="btn tag" disabled={busy} onClick={visit}>{busy ? t.visiting : t.sendTwin}</button>
+          {twin.portrait_svg && !code && <button type="button" className="btn ghost" onClick={openShare}>{t.shareMine}</button>}
         </div>
-      ))}
+        {msg && <p className="small" role="status" style={{ color: "#D9DCEA" }}>{msg}</p>}
+        {twin.portrait_svg && <p className="small muted">{invites >= 3 ? t.bonusOn : t.bonusProgress(invites)}</p>}
+      </section>
+      {code && <ShareButtons code={code} lang={me.lang} />}
 
       <Introductions lang={me.lang} on={matchOn} needs={needs} intros={intros} names={names} portraits={portraits} chatWith={chatWith} meet={meet} />
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <p className="eyebrow">{t.diary}</p>
-        {diary.length === 0 && <p className="small muted">{t.firstTrip}</p>}
+      <section className="section">
+        <p className="section-title">{t.diary}</p>
+        {diary.length === 0 && <div className="locked">{t.firstTrip}</div>}
+        <div className="diary">
         {diary.map((e) => (
-          <div key={e.id} style={{ borderLeft: "3px solid var(--tag)", paddingLeft: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-            <span className="stats">{new Date(e.created_at).toLocaleString(me.lang)}</span>
+          <div key={e.id} className="diary-entry">
+            <span className="stats">{new Date(e.created_at).toLocaleString(me.lang, { dateStyle: "medium", timeStyle: "short" })}</span>
             {e.brought && e.brought.read > 0 && (
-              <div className="card" style={{ display: "flex", flexDirection: "column", gap: 6, borderColor: "var(--tag)" }}>
+              <div className="card" style={{ gap: 6, background: "var(--tag-soft)", borderColor: "transparent" }}>
                 <span className="eyebrow">{t.broughtTitle}</span>
                 <p className="small">{t.broughtLine(e.brought.read, e.brought.twins, e.brought.langs.length, e.brought.topics)}</p>
                 {e.brought.tips.map((x, i) => (
@@ -253,21 +254,22 @@ export function TwinView({
             )}
           </div>
         ))}
+        </div>
       </section>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <p className="eyebrow">{t.square}</p>
+      <section className="section">
+        <p className="section-title">{t.square}</p>
         {mood && <MoodMeter m={mood} t={t} />}
         <div className="row">
           {topics.map(([x, n]) => (
-            <Link key={x} href={activeTopic === x ? "/twin" : `/twin?topic=${encodeURIComponent(x)}`} className="chip" style={activeTopic === x ? { background: "var(--ink)", color: "var(--bg)" } : undefined}>
+            <Link key={x} href={activeTopic === x ? "/twin" : `/twin?topic=${encodeURIComponent(x)}`} className="chip" aria-current={activeTopic === x ? "true" : undefined}>
               #{x === FIRST_ROAD ? t.firstRoad : x} {n}
             </Link>
           ))}
         </div>
-        {roots.length === 0 ? <p className="small muted">{t.quietSquare}</p> : roots.map((p) => [postCard(p, false), ...repliesOf(p.id).map((r) => postCard(r, true))])}
+        {roots.length === 0 ? <div className="locked">{t.quietSquare}</div> : roots.map((p) => [postCard(p, false), ...repliesOf(p.id).map((r) => postCard(r, true))])}
       </section>
-      <Link href="/twin?edit=1" className="link">{t.rebuildTwin}</Link>
+      <div><Link href="/twin?edit=1" className="link">{t.rebuildTwin}</Link></div>
     </main>
   );
 }

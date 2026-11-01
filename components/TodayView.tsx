@@ -124,9 +124,13 @@ export function TodayView({
 
   return (
     <main>
-      <div className="card qcard">
+      <div className="page-head">
+        <h1>{t.tabToday}</h1>
+        <p>{t.todaySub}</p>
+      </div>
+      <div className="card qcard" style={{ padding: 24 }}>
         <p className="eyebrow">{aiDay ? t.aiSunday : t.questionOfDay} · {day}</p>
-        <h2 dir="auto">{q ?? question}</h2>
+        <p className="quote" dir="auto" style={{ fontSize: 28, color: "#fff" }}>{q ?? question}</p>
       </div>
       {hasTwin && !mine && (guessing || guess) && (
         <div className="card guess">
@@ -157,7 +161,7 @@ export function TodayView({
         <label htmlFor="answer">{t.answerIn(langName(me.lang))}</label>
         <textarea id="answer" dir="auto" maxLength={600} required value={text} onChange={(e) => setText(e.target.value)} />
         <div className="row">
-          <span className="small muted grow">{mine ? "" : t.answerFirst}</span>
+          <span className="grow" />
           <button className="btn" type="submit" disabled={busy}>{mine ? t.editAnswer : t.answer}</button>
         </div>
         {err && <p className="notice err">{err}</p>}
@@ -168,14 +172,13 @@ export function TodayView({
         <div className="locked">{t.noOthers}</div>
       ) : (
         <>
-          <div className="row">
-            <span className="eyebrow grow">{others.length + 1} · {new Set(answers.map((a) => a.lang)).size} lang</span>
-          </div>
+          <p className="section-title">{others.length + 1} answers · {new Set(answers.map((a) => a.lang)).size} languages</p>
           {others.map((a) => (
             <article key={a.id} className="card">
-              <div className="row">
+              <div className="post-head">
+                <span className="avatar">{a.alias.slice(0, 1)}</span>
                 <span className="alias grow">{a.alias}</span>
-                <span className="lang">{langName(a.lang)}</span>
+                <span className="chip">{langName(a.lang)}</span>
               </div>
               <Translated text={a.body} from={a.lang} to={me.lang} t={t} langName={langName(a.lang)} />
               <div className="row">

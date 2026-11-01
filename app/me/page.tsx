@@ -1,4 +1,4 @@
-import { Nav } from "@/components/Nav";
+import { Nav, PageHead } from "@/components/Nav";
 import { DeleteAccount } from "@/components/DeleteAccount";
 import { ProfileForm } from "@/components/ProfileForm";
 import { SignOut } from "@/components/SignOut";
@@ -13,6 +13,7 @@ export default async function Me() {
     <>
       <Nav t={t} active="me" alias={profile.alias} />
       <main>
+        <PageHead title={t.meTitle} sub={t.meSub} />
         <ProfileForm
           userId={profile.id}
           initial={{ alias: profile.alias, lang: profile.lang }}
@@ -20,7 +21,7 @@ export default async function Me() {
         />
         <SignOut label={t.signOut} />
         <div>
-          <DeleteAccount t={t} />
+          <DeleteAccount t={{ deleteAccount: t.deleteAccount, deleteWarn: t.deleteWarn, deleteType: t.deleteType, deleteFailed: t.deleteFailed, cancel: t.cancel }} />
         </div>
       </main>
     </>

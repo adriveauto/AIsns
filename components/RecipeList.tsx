@@ -31,7 +31,10 @@ export function RecipeList({
 
   return (
     <main>
-      <p className="muted">{t.recipesIntro}</p>
+      <div className="page-head">
+        <h1>{t.recipesTitle}</h1>
+        <p>{t.recipesIntro}</p>
+      </div>
       <form className="row" action="/recipes">
         <input className="grow" name="q" defaultValue={q} placeholder={t.search} aria-label={t.search} />
       </form>
@@ -47,11 +50,12 @@ export function RecipeList({
       )}
       {recipes.map((r) => (
         <article key={r.id} className="card">
-          <div className="row">
+          <div className="post-head">
+            <span className="avatar">{(aliases[r.author] ?? "—").slice(0, 1)}</span>
             <span className="alias grow">{aliases[r.author] ?? "—"}</span>
             <span className="stats">{stats[r.id]?.votes ?? 0} {t.votes} · {stats[r.id]?.remixes ?? 0} {t.remixes}</span>
           </div>
-          <Link href={`/recipes/${r.id}`} style={{ textDecoration: "none" }}>
+          <Link href={`/recipes/${r.id}`} className="recipe-title">
             <Text text={r.title} from={r.lang} to={lang} signedIn={signedIn} />
           </Link>
           <Text text={r.goal} from={r.lang} to={lang} signedIn={signedIn} />

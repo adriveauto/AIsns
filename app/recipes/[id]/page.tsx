@@ -40,8 +40,11 @@ export default async function RecipePage({ params }: Params) {
     <>
       <Nav t={t} active="recipes" alias={profile?.alias ?? null} />
       <main>
-        <p className="eyebrow">{author?.alias ?? "—"} · {r.created_at.slice(0, 10)}</p>
-        <h2><Text text={r.title} from={r.lang} to={lang} signedIn={signedIn} /></h2>
+        <Link href="/recipes" className="link">← {t.recipesTitle}</Link>
+        <div className="page-head">
+          <div className="h1" role="heading" aria-level={1}><Text text={r.title} from={r.lang} to={lang} signedIn={signedIn} /></div>
+          <p className="post-head small"><span className="avatar">{(author?.alias ?? "—").slice(0, 1)}</span>{author?.alias ?? "—"} · {r.created_at.slice(0, 10)}</p>
+        </div>
         <section className="card">
           <p className="eyebrow">{t.goal}</p>
           <Text text={r.goal} from={r.lang} to={lang} signedIn={signedIn} />

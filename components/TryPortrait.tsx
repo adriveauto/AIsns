@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconCheck, IconCopy, IconLock } from "@/components/Icons";
 import { ShareButtons } from "@/components/ShareButtons";
 import { Consent } from "@/components/Legal";
 import { Alert } from "@/components/Modal";
@@ -51,13 +52,13 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
 
   if (res) {
     return (
-      <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <div className="card qcard" style={{ alignItems: "center", textAlign: "center" }}>
+      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <figure className="portrait-card" style={{ margin: 0, maxWidth: "none" }}>
           <p className="eyebrow">{t.seesMe(src === "Other" ? "AI" : src)}</p>
-          <img src={svgSrc(res.svg)} alt={res.title} width={220} height={220} style={{ borderRadius: 32, margin: "0 auto" }} />
-          {res.view && <p dir="auto" style={{ fontFamily: "var(--f-display)", fontSize: 20 }}>“{res.view}”</p>}
-          {res.title && <p className="small" style={{ opacity: 0.75 }}>{res.title}</p>}
-        </div>
+          <img src={svgSrc(res.svg)} alt={res.title} width={240} height={240} />
+          {res.view && <p className="quote" dir="auto">“{res.view}”</p>}
+          {res.title && <p className="small">{res.title}</p>}
+        </figure>
         {refCode && (
           <div className="card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <p className="eyebrow">{t.compareTitle}</p>
@@ -70,7 +71,7 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
           </div>
         )}
         <ShareButtons code={res.code} lang={lang} />
-        <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div className="card">
           <h2>{t.keepTitle}</h2>
           {!!res.found && (
             <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -84,8 +85,8 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
             </div>
           )}
           <p className="small">{t.trialWhatTwinDoes}</p>
-          <label className="small" style={{ display: "flex", gap: 8, alignItems: "flex-start", flexDirection: "row" }}>
-            <input type="checkbox" checked={intro} onChange={(e) => setIntro(e.target.checked)} style={{ width: "auto", marginTop: 3 }} />
+          <label className="small" style={{ display: "flex", gap: 10, alignItems: "flex-start", flexDirection: "row", fontWeight: 400 }}>
+            <input type="checkbox" checked={intro} onChange={(e) => setIntro(e.target.checked)} style={{ marginTop: 1, flex: "none" }} />
             <span>{t.trialIntroOk}</span>
           </label>
           <SignIn lang={lang} trial={res.claim} refCode={refCode} intro={intro} agreed />
@@ -96,26 +97,30 @@ export function TryPortrait({ lang, refCode }: { lang: Lang; refCode?: string })
 
   const ais = ["ChatGPT", "Claude", "Gemini", "Other"];
   return (
-    <form className="card" onSubmit={draw} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <form className="card try" onSubmit={draw} style={{ padding: 24, gap: 18 }}>
       <Consent lang={lang} checked={agreed} onChange={setAgreed} id="consent-try" />
-      <p className="eyebrow">{t.tryStep1}</p>
-      <div className="row">
-        {ais.map((x) => (
-          <button key={x} type="button" className={src === x ? "btn" : "btn ghost"} onClick={() => setSrc(x)}>{x === "Other" ? t.otherAi : x}</button>
-        ))}
+      <div className="stack" style={{ gap: 10 }}>
+        <p className="try-step"><span>1</span>{t.tryStep1.replace(/^1\.\s*/, "")}</p>
+        <div className="seg" role="group" aria-label={t.tryStep1}>
+          {ais.map((x) => (
+            <button key={x} type="button" aria-pressed={src === x} onClick={() => setSrc(x)}>{x === "Other" ? t.otherAi : x}</button>
+          ))}
+        </div>
       </div>
-      <p dir="auto" className="notice" style={{ color: "var(--ink)" }}>{t.portraitQuestion}</p>
-      <div>
+      <div className="question">
+        <p dir="auto">{t.portraitQuestion}</p>
         <button type="button" className="btn tag" onClick={() => navigator.clipboard.writeText(t.portraitQuestion).then(() => setCopied(true)).catch(() => {})}>
+          {copied ? <IconCheck /> : <IconCopy />}
           {copied ? t.copiedGoAsk(src === "Other" ? "AI" : src) : t.copyQuestion}
         </button>
       </div>
-      <label htmlFor="try-a" className="eyebrow">{t.tryStep2}
-        <textarea id="try-a" required minLength={40} maxLength={4000} rows={6} dir="auto" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={t.tryPlaceholder} />
+      <label htmlFor="try-a" className="stack" style={{ gap: 10 }}>
+        <span className="try-step"><span>2</span>{t.tryStep2.replace(/^2\.\s*/, "")}</span>
+        <textarea id="try-a" required minLength={40} maxLength={4000} rows={5} dir="auto" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={t.tryPlaceholder} />
       </label>
-      <button className="btn" type="submit" disabled={busy || !agreed || answer.trim().length < 40}>{busy ? t.drawing : t.drawMe}</button>
-      {err && <p className="small muted" role="status">{err}</p>}
-      <p className="small muted">{t.tryPrivacy}</p>
+      <button className="btn lg block" type="submit" disabled={busy || !agreed || answer.trim().length < 40}>{busy ? t.drawing : t.drawMe}</button>
+      {err && <p className="notice err" role="status">{err}</p>}
+      <p className="small muted" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><IconLock className="inline-ico" />{t.tryPrivacy}</p>
       {popup && <Alert text={popup} ok={t.ok} onClose={() => setPopup("")} />}
     </form>
   );
