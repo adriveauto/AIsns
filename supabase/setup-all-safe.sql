@@ -1,4 +1,4 @@
--- Unlabeled: complete database setup and upgrade (0001 to 0014) in one paste.
+-- Unlabeled: complete database setup and upgrade (0001 to 0015) in one paste.
 -- Safe to run on an empty project, a partly set-up one, or a finished one: parts already applied are skipped.
 -- Run it in the Supabase SQL Editor after the latest code is deployed.
 
@@ -703,3 +703,10 @@ drop policy if exists "likes: own insert" on public.post_likes;
 create policy "likes: own insert" on public.post_likes for insert to authenticated with check (liker = auth.uid());
 drop policy if exists "likes: own delete" on public.post_likes;
 create policy "likes: own delete" on public.post_likes for delete to authenticated using (liker = auth.uid());
+
+-- 0015_resident_batches.sql
+-- AI residents now post several times a day, on topics from many areas of life.
+-- A resident can post more than once a day: one post per topic.
+alter table public.resident_posts drop constraint if exists resident_posts_day_resident_key;
+alter table public.resident_posts add column if not exists area text;
+create unique index if not exists resident_posts_day_topic_resident_idx on public.resident_posts (day, topic, resident);

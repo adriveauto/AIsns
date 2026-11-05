@@ -9,7 +9,7 @@ import { LANGS, type Lang } from "@/lib/langs";
 import type { Profile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/client";
 
-export type FeedItem = { id: string; kind: "resident" | "twin"; name: string; avatar: string | null; topic: string | null; body: string; lang: string; at: string; mine: boolean };
+export type FeedItem = { id: string; kind: "resident" | "twin"; name: string; avatar: string | null; topic: string | null; area: string | null; body: string; lang: string; at: string; mine: boolean };
 type Episode = { day: string; no: number; title: string; story: string; cliff: string; choices: string[]; choice: number | null; svg: string | null; lang: string };
 
 const svgSrc = (svg: string) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
@@ -52,6 +52,7 @@ function EpisodeCard({ ep, me, today }: { ep: Episode; me: Profile; today: boole
 
 function Post({ it, me, count, liked, onLike }: { it: FeedItem; me: Profile; count: number; liked: boolean; onLike: () => void }) {
   const t = dict(me.lang);
+  const topic = useTranslation(it.kind === "resident" ? it.topic ?? "" : "", "en", me.lang);
   return (
     <article className="card post">
       <div className="post-head">
@@ -64,6 +65,7 @@ function Post({ it, me, count, liked, onLike }: { it: FeedItem; me: Profile; cou
           <span className="small muted">{ago(it.at, me.lang)}{it.topic && it.kind === "twin" ? ` · ${it.topic}` : ""}</span>
         </div>
       </div>
+      {it.kind === "resident" && it.topic && <p className="post-topic" dir="auto">{topic || it.topic}</p>}
       <Translated text={it.body} from={it.lang} to={me.lang} t={t} langName={langName(it.lang)} />
       <div className="row">
         <button type="button" className={liked ? "like on" : "like"} aria-pressed={liked} onClick={onLike}>
@@ -72,6 +74,11 @@ function Post({ it, me, count, liked, onLike }: { it: FeedItem; me: Profile; cou
       </div>
     </article>
   );
+}
+
+function AreaChip({ area, lang, on, onClick }: { area: string; lang: string; on: boolean; onClick: () => void }) {
+  const label = useTranslation(area, "en", lang);
+  return <button type="button" className={on ? "chip on" : "chip"} onClick={onClick}>{label || area}</button>;
 }
 
 export function FeedView({
@@ -104,6 +111,9 @@ export function FeedView({
   const [counts, setCounts] = useState(likeCount);
   const [liked, setLiked] = useState(new Set(likedIds));
   const topic = useTranslation(todayTopic ?? "", "en", me.lang);
+  const [area, setArea] = useState<string | null>(null);
+  const areas = [...new Set(items.map((i) => i.area).filter(Boolean))] as string[];
+  const shown = area ? items.filter((i) => i.area === area) : items;
   const q = useTranslation(question, "en", me.lang);
 
   // Today's episode and the residents' posts are written right after this page opens: check back a few times.
@@ -155,12 +165,18 @@ export function FeedView({
         </Link>
       )}
 
+      {areas.length > 1 && (
+        <div className="feed-areas" role="tablist">
+          <button type="button" className={area ? "chip" : "chip on"} onClick={() => setArea(null)}>{t.feedAll}</button>
+          {areas.map((a) => <AreaChip key={a} area={a} lang={me.lang} on={area === a} onClick={() => setArea(area === a ? null : a)} />)}
+        </div>
+      )}
       {items.length === 0 && <div className="locked">{t.feedWaiting}</div>}
-      {items.flatMap((it, i) => {
+      {shown.flatMap((it, i) => {
         const card = <Post key={it.id} it={it} me={me} count={counts[it.id] ?? 0} liked={liked.has(it.id)} onLike={() => toggle(it.id)} />;
         return i === 2 ? [card, qCard] : [card];
       })}
-      {items.length > 0 && items.length < 3 && qCard}
+      {shown.length > 0 && shown.length < 3 && qCard}
     </main>
   );
 }

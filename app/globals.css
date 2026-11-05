@@ -487,3 +487,7 @@ main.landing { max-width: none; padding: 0; gap: 0; }
 .episode-choices{display:flex;flex-direction:column;gap:8px}
 .episode-choices .btn{text-align:left;white-space:normal}
 .feed-q,.feed-cta{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit}
+.chip.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.feed-areas{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.feed-areas .chip{flex:none;cursor:pointer}
+.post-topic{font-weight:700;margin:0 0 4px}
