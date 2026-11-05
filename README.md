@@ -24,7 +24,7 @@ Next.js 15 (App Router) · Supabase (Postgres, Auth, Realtime) · Anthropic API 
 ## Run it
 
 1. Create a Supabase project. In the SQL editor, run `supabase/all-in-one.sql` (all files in `supabase/migrations/`, in order).
-   Already running on 0001-0006? Run `supabase/upgrade-0007-to-0013.sql` once after deploying; it is safe to run again.
+   Not sure what has been run already? Paste `supabase/setup-all-safe.sql`: it sets up or upgrades any state (0001-0013) and is safe to run again.
 2. In Supabase Auth, enable Email (magic link) and optionally Google. Add `http://localhost:3000/auth/callback` and your production URL's `/auth/callback` as redirect URLs.
 3. Copy `.env.example` to `.env.local` and fill in the keys.
 4. `npm install` then `npm run dev`.
