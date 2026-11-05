@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Consent } from "@/components/Legal";
 import { dict } from "@/lib/i18n";
 import type { Lang } from "@/lib/langs";
@@ -28,7 +28,9 @@ export function SignIn({ lang, trial, refCode, intro, agreed: agreedBefore = fal
   const [busy, setBusy] = useState(false);
   const [agreed, setAgreed] = useState(agreedBefore);
   const [showEmail, setShowEmail] = useState(!GOOGLE);
-  const supabase = createClient();
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [supabase] = useState(() => createClient());
   // Read on click: window does not exist while the page renders on the server.
   const redirectTo = () => `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback`;
 
@@ -40,9 +42,39 @@ export function SignIn({ lang, trial, refCode, intro, agreed: agreedBefore = fal
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(), data } });
     // Supabase's built-in mailer allows only a few emails an hour; say so instead of a vague error.
     const limited = error && (error.status === 429 || /rate limit/i.test(error.message));
-    setMsg(!error ? t.linkSent : limited ? t.emailLimited : t.error);
+    if (!error) setSent(true);
+    setMsg(!error ? t.codeSent : limited ? t.emailLimited : t.error);
     setBusy(false);
   }
+
+  // The 6-digit code keeps sign-in on this page: on phones the email link often opens
+  // inside the mail app's own browser, which does not share the login with this one.
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: "email" });
+    if (error) {
+      setMsg(t.codeWrong);
+      setBusy(false);
+      return;
+    }
+    window.location.assign("/twin");
+  }
+
+  // If the email link is opened in another tab of this same browser, move this page along too.
+  useEffect(() => {
+    if (!sent) return;
+    const check = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) window.location.assign("/twin");
+    };
+    const timer = setInterval(check, 3000);
+    window.addEventListener("focus", check);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", check);
+    };
+  }, [sent, supabase]);
 
   return (
     <div className="card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -62,7 +94,26 @@ export function SignIn({ lang, trial, refCode, intro, agreed: agreedBefore = fal
       {GOOGLE && !showEmail && (
         <button type="button" className="link" style={{ alignSelf: "center" }} onClick={() => setShowEmail(true)}>{t.emailInstead}</button>
       )}
-      {showEmail && (
+      {showEmail && sent && (
+        <form onSubmit={verifyCode} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <label htmlFor={trial ? "code-signup" : "code"}>
+            {t.codeLabel}
+            <input
+              id={trial ? "code-signup" : "code"}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6,10}"
+              maxLength={10}
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            />
+          </label>
+          <button className="btn" type="submit" disabled={busy || code.length < 6}>{t.codeSubmit}</button>
+          <button type="button" className="link" style={{ alignSelf: "center" }} onClick={() => { setSent(false); setCode(""); setMsg(""); }}>{t.codeResend}</button>
+        </form>
+      )}
+      {showEmail && !sent && (
         <form onSubmit={sendLink} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <label htmlFor={trial ? "email-signup" : "email"} className={GOOGLE ? "small" : undefined}>
             {t.emailLabel}
