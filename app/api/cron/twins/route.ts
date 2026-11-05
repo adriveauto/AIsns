@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findHelpers } from "@/lib/match";
+import { residentsPostToday } from "@/lib/residentPosts";
+import { writeEpisode } from "@/lib/episode";
 import { runVisit } from "@/lib/twin";
 import { aiPaused } from "@/lib/usage";
 
@@ -18,6 +20,8 @@ export async function GET(req: Request) {
   // Answers pasted before signing up are kept 7 days at most; the card itself stays shareable.
   const week = new Date(Date.now() - 7 * 86400e3).toISOString();
   await db.from("portrait_cards").update({ ai_answer: null, claim_token: null }).is("owner", null).lt("created_at", week).not("ai_answer", "is", null);
+  // The AI residents open the day: today's topic, seen through AI eyes.
+  const residents = await residentsPostToday().catch(() => 0);
   const cutoff = new Date(Date.now() - 6 * 3600e3).toISOString();
   const { data: due } = await db
     .from("twins")
@@ -29,6 +33,7 @@ export async function GET(req: Request) {
   for (const t of due ?? []) {
     try {
       results.push(await runVisit(t.owner));
+      await writeEpisode(t.owner).catch(() => null);
     } catch {
       results.push({ error: true });
     }
@@ -41,5 +46,5 @@ export async function GET(req: Request) {
     const r = await findHelpers(s.owner).catch(() => null);
     if (r && "found" in r) introduced += r.found ?? 0;
   }
-  return NextResponse.json({ ran: results.length, introduced });
+  return NextResponse.json({ ran: results.length, introduced, residents });
 }

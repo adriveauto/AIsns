@@ -1,23 +1,23 @@
 import Link from "next/link";
-import { IconChats, IconMe, IconRecipes, IconToday, IconTwin, LogoMark } from "@/components/Icons";
+import { IconChats, IconFeed, IconMe, IconToday, IconTwin, LogoMark } from "@/components/Icons";
 import type { Dict } from "@/lib/i18n";
 
-type Key = "twin" | "today" | "chats" | "recipes" | "me";
+type Key = "feed" | "twin" | "today" | "chats" | "recipes" | "me";
 
 // Signed-in chrome: a top bar with the main menu on wide screens, and a bottom tab bar on phones.
 export function Nav({ t, active, alias }: { t: Dict; active: Key; alias: string | null }) {
   const items = [
+    ["feed", "/feed", t.tabFeed, IconFeed],
     ["twin", "/twin", t.tabTwin, IconTwin],
     ["today", "/today", t.tabToday, IconToday],
     ["chats", "/chats", t.tabChats, IconChats],
-    ["recipes", "/recipes", t.tabRecipes, IconRecipes],
     ["me", "/me", t.tabMe, IconMe],
   ] as const;
   return (
     <>
       <header className="site-header">
         <div className="inner">
-          <Link href={alias ? "/twin" : "/"} className="logo" aria-label="Unlabeled home">
+          <Link href={alias ? "/feed" : "/"} className="logo" aria-label="Unlabeled home">
             <LogoMark />
             <span>Unlabeled</span>
           </Link>

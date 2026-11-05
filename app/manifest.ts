@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Unlabeled",
     short_name: "Unlabeled",
     description: "Talk to anyone on Earth in your own language. No labels until you both say so.",
-    start_url: "/twin",
+    start_url: "/feed",
     scope: "/",
     display: "standalone",
     background_color: "#151A2E",
