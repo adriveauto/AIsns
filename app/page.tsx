@@ -16,7 +16,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ r
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/twin");
+  if (user) redirect("/feed");
   const lang = guessLang((await headers()).get("accept-language"));
   const { data: statRows } = await supabase.rpc("square_stats");
   const stats = (Array.isArray(statRows) ? statRows[0] : statRows) as { twins: number; langs: number } | null;
