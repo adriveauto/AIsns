@@ -7,6 +7,8 @@ import type { Lang } from "@/lib/langs";
 import { createClient } from "@/lib/supabase/client";
 
 const GOOGLE = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";
+// Supabase's default email has no code; turn this on only once the template shows {{ .Token }} (needs custom SMTP).
+const EMAIL_CODE = process.env.NEXT_PUBLIC_EMAIL_CODE === "1";
 
 function GoogleMark() {
   return (
@@ -43,7 +45,7 @@ export function SignIn({ lang, trial, refCode, intro, agreed: agreedBefore = fal
     // Supabase's built-in mailer allows only a few emails an hour; say so instead of a vague error.
     const limited = error && (error.status === 429 || /rate limit/i.test(error.message));
     if (!error) setSent(true);
-    setMsg(!error ? t.codeSent : limited ? t.emailLimited : t.error);
+    setMsg(!error ? (EMAIL_CODE ? t.codeSent : t.linkSent) : limited ? t.emailLimited : t.error);
     setBusy(false);
   }
 
@@ -94,7 +96,7 @@ export function SignIn({ lang, trial, refCode, intro, agreed: agreedBefore = fal
       {GOOGLE && !showEmail && (
         <button type="button" className="link" style={{ alignSelf: "center" }} onClick={() => setShowEmail(true)}>{t.emailInstead}</button>
       )}
-      {showEmail && sent && (
+      {showEmail && sent && EMAIL_CODE && (
         <form onSubmit={verifyCode} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <label htmlFor={trial ? "code-signup" : "code"}>
             {t.codeLabel}
