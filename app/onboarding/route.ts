@@ -5,6 +5,7 @@ import { REF_COOKIE, TRIAL_COOKIE, claimTrial, inviterOf } from "@/lib/cards";
 import { emailHash } from "@/lib/email-hash";
 import { guessLang } from "@/lib/langs";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { SRC_COOKIE, cleanSrc, recordPromo } from "@/lib/promo";
 import { runVisit } from "@/lib/twin";
 
 // First visit after signing in: nothing to fill in. Name and language are picked
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.redirect(new URL("/", origin));
 
   const jar = await cookies();
-  const meta = (user.user_metadata ?? {}) as { trial?: string; ref?: string; intro?: string };
+  const meta = (user.user_metadata ?? {}) as { trial?: string; ref?: string; intro?: string; src?: string };
   const refCode = jar.get(REF_COOKIE)?.value ?? meta.ref;
   const trialCode = jar.get(TRIAL_COOKIE)?.value ?? meta.trial;
   const { data: existing } = await supabase.from("profiles").select("id, lang").eq("id", user.id).maybeSingle();
@@ -29,6 +30,8 @@ export async function GET(req: Request) {
     const { error } = await supabase.from("profiles").insert({ id: user.id, alias: randomAlias(), lang });
     // Who invited whom is written by the server only, so nobody can credit themselves.
     if (!error && invited_by) await createServiceClient().from("profiles").update({ invited_by }).eq("id", user.id).then(() => null, () => null);
+    const src = cleanSrc(jar.get(SRC_COOKIE)?.value ?? meta.src);
+    if (!error && src) after(() => recordPromo(src, "signup", user.id));
     if (error) return new NextResponse("Could not create your profile. Please try again in a minute.", { status: 500 });
     // An address that deleted a suspended account comes back suspended.
     if (user.email) {
@@ -43,5 +46,6 @@ export async function GET(req: Request) {
   const res = NextResponse.redirect(new URL(claimed ? "/twin?welcome=1" : "/twin", origin));
   res.cookies.delete(TRIAL_COOKIE);
   res.cookies.delete(REF_COOKIE);
+  res.cookies.delete(SRC_COOKIE);
   return res;
 }

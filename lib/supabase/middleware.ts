@@ -46,6 +46,18 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
+  // Remember which promotion post brought this visitor, and count the first visit (not bots).
+  const src = request.nextUrl.searchParams.get("src")?.toLowerCase() ?? "";
+  if (/^[a-z0-9-]{1,40}$/.test(src) && !user && !request.cookies.get("ul_src") && !/bot|crawl|spider|preview|facebookexternalhit|slack|discord|whatsapp|telegram|embed|curl|python|headless/i.test(request.headers.get("user-agent") ?? "bot")) {
+    response.cookies.set("ul_src", src, { maxAge: 60 * 60 * 24 * 30, sameSite: "lax", secure: true, path: "/" });
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/promo_events`, {
+        method: "POST",
+        headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ src, kind: "visit" }),
+      }).catch(() => null);
+    }
+  }
   // Remember whose portrait card brought this visitor, so the inviter can see it worked.
   const ref = request.nextUrl.searchParams.get("ref");
   if (ref && /^[a-z0-9]{8}$/.test(ref) && !user) response.cookies.set("ul_ref", ref, { maxAge: 60 * 60 * 24 * 30, httpOnly: true, sameSite: "lax", secure: true, path: "/" });
