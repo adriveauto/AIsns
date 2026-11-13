@@ -29,6 +29,7 @@ export default async function Admin() {
   return (
     <main style={{ paddingTop: 24 }}>
       <h1>신고함 · Reports</h1>
+      <p className="small"><a href="/admin/growth">홍보 성과 보기 →</a></p>
       <p className="small muted">열린 신고 {list.length}건. 18세 미만·성적·스캠 신고가 위에 있어요. 대화 내용은 여기서 보이지 않아요.</p>
       {list.length === 0 && <p className="muted">열린 신고가 없어요.</p>}
       {list.map((r) => (

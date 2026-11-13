@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { redirect } from "next/navigation";
+import { markActive } from "./promo";
 import { createClient } from "./supabase/server";
 import { isLang, type Lang } from "./langs";
 
@@ -13,6 +15,7 @@ export async function requireProfile() {
   if (!user) redirect("/");
   const { data } = await supabase.from("profiles").select("id, alias, lang").eq("id", user.id).maybeSingle();
   if (!data) redirect("/onboarding");
+  after(() => markActive(data.id));
   const profile: Profile = { id: data.id, alias: data.alias, lang: isLang(data.lang) ? data.lang : "en" };
   return { supabase, user, profile };
 }

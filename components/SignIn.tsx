@@ -40,7 +40,8 @@ export function SignIn({ lang, trial, refCode, intro, agreed: agreedBefore = fal
     e.preventDefault();
     if (!agreed) return;
     setBusy(true);
-    const data = { agreed_at: new Date().toISOString(), ...(trial ? { trial } : {}), ...(refCode ? { ref: refCode } : {}), ...(intro ? { intro: "1" } : {}) };
+    const src = document.cookie.match(/(?:^|; )ul_src=([a-z0-9-]{1,40})/)?.[1];
+    const data = { agreed_at: new Date().toISOString(), ...(src ? { src } : {}), ...(trial ? { trial } : {}), ...(refCode ? { ref: refCode } : {}), ...(intro ? { intro: "1" } : {}) };
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(), data } });
     // Supabase's built-in mailer allows only a few emails an hour; say so instead of a vague error.
     const limited = error && (error.status === 429 || /rate limit/i.test(error.message));
