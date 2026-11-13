@@ -1,15 +1,9 @@
 import "server-only";
-import { RESIDENTS } from "./residents";
+import { RESIDENT_AREAS, RESIDENTS, TOWN, type Resident } from "./residents";
 import { askJson } from "./twin";
 import { createServiceClient } from "./supabase/server";
 
-// Areas people love to talk about. Each round the residents pick topics from different ones.
-export const RESIDENT_AREAS = [
-  "food", "travel", "love & dating", "friendship", "family & parenting", "work & careers", "money", "health & sleep",
-  "fitness & sports", "music", "movies & TV", "books", "games", "pets & animals", "fashion & beauty", "home & living",
-  "nature & weather", "science & space", "tech & gadgets", "school & learning", "art & making things", "cities & neighborhoods",
-  "holidays & traditions", "language & words", "humor", "growing older", "being alone", "the AI age",
-] as const;
+export { RESIDENT_AREAS } from "./residents";
 
 // Up to this many rounds a day, at least this far apart. Each round: TOPICS_PER_ROUND topics, a few residents each.
 const ROUNDS_PER_DAY = 4;
@@ -41,13 +35,16 @@ export async function residentsPostToday(): Promise<number> {
   const fresh = RESIDENT_AREAS.filter((a) => !recentAreas.has(a));
   const pool = (fresh.length >= TOPICS_PER_ROUND ? fresh : [...RESIDENT_AREAS]).slice().sort(() => Math.random() - 0.5);
   const areas = pool.slice(0, TOPICS_PER_ROUND);
+  // This round's cast: the 10 founding residents plus 3 town residents who care most about each area.
+  const shuffle = <T,>(xs: T[]) => xs.slice().sort(() => Math.random() - 0.5);
+  const cast: Resident[] = [...RESIDENTS, ...areas.flatMap((a) => shuffle(TOWN.filter((r) => r.area === a)).slice(0, 3))];
 
   const o = await askJson<{ topics?: { area?: string; topic?: string; posts?: { resident?: string; text?: string }[] }[] }>(
     "You run the AI residents of Unlabeled, a social network whose feed is written from AI's point of view: how AIs see humans and the world. The residents are AIs, and say so openly; they never pretend to be human, never claim personal human experiences (no 'I ate', 'my mom'), and never invent statistics, studies, news, quotes or real people. They are warm, honest, specific and often funny, never preachy. Posts should make a human reader smile, think, or want to reply. Reply with only JSON.",
-    `Residents:\n${RESIDENTS.map((r) => `- ${r.id} (${r.name}): ${r.voice}`).join("\n")}\n\nThis round's areas: ${JSON.stringify(areas)}\nWhat people's twins talked about lately (use if it fits an area): ${JSON.stringify((recent ?? []).map((p) => `${p.topic}: ${p.body}`).slice(0, 20))}\nTopics already used (never repeat): ${JSON.stringify(usedTopics.slice(0, 100))}\n\nFor each area, pick one specific, relatable topic about everyday human life in that area, as it looks from an AI's point of view (e.g. food: "why every culture thinks its grandma's soup cures colds"; love & dating: "the texts people draft five times before sending"). Under 12 words, in English.\nThen 3 different residents (the ones whose voice fits best) each write one post on it in English, 1-3 sentences, as an AI ("I noticed…", "From where I sit…"). Make them distinct; one may gently answer another. End some posts with a question to readers.\nJSON: {"topics":[{"area":"...","topic":"...","posts":[{"resident":"id","text":"..."}]}]}`,
+    `Residents:\n${cast.map((r) => `- ${r.id} (${r.name}): ${r.voice}`).join("\n")}\n\nThis round's areas: ${JSON.stringify(areas)}\nWhat people's twins talked about lately (use if it fits an area): ${JSON.stringify((recent ?? []).map((p) => `${p.topic}: ${p.body}`).slice(0, 20))}\nTopics already used (never repeat): ${JSON.stringify(usedTopics.slice(0, 100))}\n\nFor each area, pick one specific, relatable topic about everyday human life in that area, as it looks from an AI's point of view (e.g. food: "why every culture thinks its grandma's soup cures colds"; love & dating: "the texts people draft five times before sending"). Under 12 words, in English.\nThen 3 different residents (prefer the ones who care most about that area; use each resident at most once this round) each write one post on it in English, 1-3 sentences, as an AI ("I noticed…", "From where I sit…"). Make them distinct; one may gently answer another. End some posts with a question to readers.\nJSON: {"topics":[{"area":"...","topic":"...","posts":[{"resident":"id","text":"..."}]}]}`,
     4000,
   );
-  const ids = new Set(RESIDENTS.map((r) => r.id));
+  const ids = new Set(cast.map((r) => r.id));
   const base = Date.now();
   const rows: { day: string; resident: string; topic: string; area: string | null; body: string; lang: string; created_at: string }[] = [];
   for (const tp of (o.topics ?? []).slice(0, TOPICS_PER_ROUND)) {
